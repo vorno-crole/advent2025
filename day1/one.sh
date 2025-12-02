@@ -39,8 +39,12 @@ while read -u 11 -r line; do
 	((i++))
 	echo -ne "$i :  ";
 
-	direction="$(grep -Eo '^\w{1}' <<< $line)"
-	distance="$(ggrep -Po '\d*$' <<< $line)"
+	# direction="$(grep -Eo '^\w{1}' <<< $line)"
+	# distance="$(ggrep -Po '\d*$' <<< $line)"
+
+	# way way faster!
+	direction=${line:0:1}
+	distance=${line:1}
 
 	echo -ne "$direction : $distance  "
 
@@ -51,6 +55,9 @@ while read -u 11 -r line; do
 		echo -ne "subtract   "
 	elif [[ $direction == 'R' ]]; then
 		echo -ne "add   "
+	else
+		echo "Error"
+		exit 1;
 	fi
 
 	# round and rounds...
@@ -58,7 +65,6 @@ while read -u 11 -r line; do
 		((distance-=100))
 		((passed_zeros+=1))
 		echo -ne "passed zeros = $passed_zeros  "
-		# check=t
 	done
 
 	# apply value
@@ -79,7 +85,6 @@ while read -u 11 -r line; do
 	elif [[ $direction == 'R' ]]; then
 		((dial_current+=$distance))
 
-
 		if [[ $dial_current -gt $dial_size ]]; then
 			((dial_current=$dial_current-100))
 
@@ -92,15 +97,15 @@ while read -u 11 -r line; do
 
 	fi
 
-
+	# landed on zero?
 	echo -ne "new dial = $dial_current"
 	if [[ $dial_current -eq 0 ]]; then
 		((landed_zeros+=1))
-		# ((passed_zeros-=1))
 		echo -ne "   landed zero!"
 		echo -ne "landed zeros = $landed_zeros  "
 	fi
 
+	# error checking
 	if [[ $dial_current -lt 0 ]]; then
 		echo "Error"
 		exit 1;
@@ -111,13 +116,9 @@ while read -u 11 -r line; do
 
 	echo
 
-	echo "landed zeros = $landed_zeros"
-	echo "passed zeros = $passed_zeros"
-	# pause
+	# echo "landed zeros = $landed_zeros"
+	# echo "passed zeros = $passed_zeros"
 
-	# if [[ $i -gt 100 ]]; then
-	# 	break;
-	# fi
 
 done 11< $input_file
 
