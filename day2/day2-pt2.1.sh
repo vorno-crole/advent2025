@@ -66,6 +66,14 @@
 output_file=output.txt
 rm -f ${output_file}
 
+# progress bar
+total=$(grep -o ',' $input_file | wc -l | grep -Eo '\d+')
+echo -ne "Progress:\n "
+for (( j = 1; j <= total +1; j++ )); do
+	echo -ne " "
+done
+echo -ne "]\r["
+
 # read the input file
 while IFS='-' read -u 11 -r low high; do
 	test-range "$low" "$high" "$output_file" && echo -ne "." &
@@ -75,7 +83,7 @@ wait
 
 # Read/sum output file
 sum=$(awk -F'=' '{ sum += $2; } END { print sum }' ${output_file})
-echo
+echo -e "\n"
 echo "sum             = $sum"
 
 expected=37432260594
