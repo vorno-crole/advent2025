@@ -32,7 +32,7 @@ while IFS='-' read -u 11 -r low high; do
 	((i++))
 	# echo -e "$i : $low - $high";
 
-	for (( num=$low; num <= $high; num++ )); do
+	for (( num = $low; num <= $high; num++ )); do
 		# echo -ne "$num, "
 		numLen=${#num}
 		substr=''
