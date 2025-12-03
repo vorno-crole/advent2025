@@ -68,13 +68,14 @@ rm -f ${output_file}
 
 # read the input file
 while IFS='-' read -u 11 -r low high; do
-	test-range "$low" "$high" "$output_file" &
+	test-range "$low" "$high" "$output_file" && echo -ne "." &
 done 11< <(cat $input_file | tr ',' '\n')
 
 wait
 
 # Read/sum output file
 sum=$(awk -F'=' '{ sum += $2; } END { print sum }' ${output_file})
+echo
 echo "sum             = $sum"
 
 expected=37432260594
