@@ -115,6 +115,32 @@
 			echo
 		fi
 	}
+
+	strToArray()
+	{
+		digits=()
+		local line=$1
+		local digit
+		local i=0
+
+		while read -u 12 digit; do
+			digits[$i]=$digit
+			((i++))
+		done 12< <(echo $line | grep -o .)
+	}
+
+	highestDigit()
+	{
+		highestValue=-1
+		highestValueIdx=-1
+		local i
+		for (( i=0; i <= ${#line} - outputLen; i++ )); do
+			if [[ ${digits[$i]} -gt $highestValue ]]; then
+				highestValue=${digits[$i]};
+				highestValueIdx=$i;
+			fi
+		done
+	}
 # functions
 
 output_file=output.txt
@@ -133,86 +159,51 @@ rm -f ${output_file}
 sum=0
 
 while IFS='|' read -u 11 -r line expected; do
-	echo -ne "$line : "
-	lineLen=${#line}
+	# echo -ne "$line : "
+	# lineLen=${#line}
 	outputLen=12
 	answer=""
 
 	# rm -f ${output_file};
 
-	# split the string by char. 
-	# output "index|value" to a temp file, for sorting
-	i=0
-	while read -u 12 digit; do
-		digits[$i]=$digit
-		# echo "$digit|$i" >> ${output_file}
-		((i++))
-	done 12< <(echo $line | grep -o .)
+	# split the string by char.
+	declare -A digits=()
+	strToArray "$line"
+	# echo ${digits[@]}
 
 	# echo; cat ${output_file};
 
-	# find the highest digit between index 0-> (15-12) (lineLen - outputLen)
-	highestValue=-1
-	highestValueIdx=-1
-	for (( i=0; i <= lineLen-outputLen ; i++ )); do
-		if [[ ${digits[$i]} -gt $highestValue ]]; then
-			highestValue=${digits[$i]};
-			highestValueIdx=$i;
-		fi
+	# loop
+	echo -ne "$line : "
+	i=0
+	while [[ ${#answer} -lt 12 ]]; do
+
+		# find the highest digit between index 0-> (15-12) (lineLen - outputLen)
+		# echo -ne "$line : "
+		highestDigit
+		answer+="$highestValue"
+		# echo "[$highestValueIdx] $highestValue. $answer"
+		((outputLen--))
+
+		# remove the chars on and before the selected char
+		line="${line:$highestValueIdx +1}"
+		# split the string by char.
+		strToArray "$line"
+
+		((i++))
+		# if (( i == 3 )); then 
+		# 	break
+		# fi
 	done
 
-	echo "[$highestValueIdx] $highestValue"
-	answer+="$highestValue"
-
-	# find the highest digit between index 0-> (15-12) (lineLen - outputLen)
-
-
-
-
-
-	exit;
-	echo $(())
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	# sort the file, get the top 12 values, read them in.
-	declare -A digits=()
-	while IFS='|' read -u 12 digit idx; do
-		digits[$idx]=$digit
-	done 12< <(sort -nr ${output_file} | head -n 12)
-
-	while read -u 12 idx; do
-		answer+="${digits[$idx]}"
-	done 12< <(printf "%s\n" "${!digits[@]}" | sort -n)
-
 	echo "$answer"
-	# exit
+	((sum += answer))
 
-
-	# test-number "$line"
-	# # test-line "$line" "$output_file" && echo -ne "." &
-	break;
 done 11< $input_file
 
-exit;
-
-
-# Read/sum output file
-sum=$(awk -F'=' '{ sum += $2; } END { print sum }' ${output_file})
-echo -e "\n"
+# # Read/sum output file
+# sum=$(awk -F'=' '{ sum += $2; } END { print sum }' ${output_file})
+# echo -e "\n"
 echo "Sum             = $sum"
 
 # rm -f ${output_file}
@@ -245,10 +236,10 @@ exit;
 # The total output joltage is now much larger: 987654321111 + 811111111119 + 434234234278 + 888911112111 = 3121910778619.
 
 
+# 234234234234278 : 434234234278
 # 987654321111111 : 987654321111
 # 811111111111119 : 811111111119
-# 234234234234278 : 343423423478
-# 818181911112111 : 881819111211
+# 818181911112111 : 888911112111
 
 # What is the new total output joltage?
 
