@@ -17,103 +17,53 @@
 		}
 	# end functions
 
-	if [[ $1 == 'example' ]]; then
+	if [[ $1 == 'example' || $1 == 'example.txt' ]]; then
 		input_file="example.txt"
 	fi
 # setup
 
 
 # functions
-	remove-last-chars()
+	process-line()
 	{
-		local string=$1
-		local num=$2
+		# local line=$1
+		# local outputfile=$2
+		# # echo -ne "$line : "
 
-		# Calculate the new length
-		new_length=$(( ${#string} - num ))
+		# answer=$(test-number "$line")
+		# echo "$line=$answer" >> ${outputfile}
 
-		# Extract the substring
-		result="${string:0:$new_length}"
-
-		echo "$result"
-	}
-
-	index-of()
-	{
-		local text=$1
-		local search=$2
-		# text="MULTI: primary virtual IP for xyz/x.x.x.x:44595: 10.0.0.12"
-		# search="IP for"
-
-		prefix=${text%%$search*}
-		echo ${#prefix}
-	}
-
-	test-number()
-	{
-		local num=$1
-		local numLen=${#num}
-		local tens
-		local units
-
-		# TODO
-		# find the largest 12 digit number, without rearranging the digits in $num
-		echo -ne "$line "
-		
-		local answer=""
-		local i
-		local j
-		local startChar=0
-
-		for (( i = 11; i >= 0; i-- )); do
-			echo -ne "$i "
-			for (( j = 9; j >= 1; j-- )); do
-				echo -ne "$j - "
-				substr1=$(remove-last-chars $num $i)
-				substr2=${substr1:$startChar}
-				echo -ne "$substr1 $substr2 "
-
-				if [[ $substr2 =~ $j ]]; then
-					answer+="$j"
-					startChar=$(index-of $substr1 $j)
-					echo -ne "startChar $startChar "
-					break;
-				fi
-			done;
-			echo
-		done;
-
-		echo $answer
-		exit;
-
-		return 1;
-	}
-
-	test-line()
-	{
 		local line=$1
 		local outputfile=$2
-		# echo -ne "$line : "
+		local ogline=$line
 
-		answer=$(test-number "$line")
-		echo "$line=$answer" >> ${outputfile}
-	}
+		outputLen=12
+		answer=""
 
-	check-answer()
-	{
-		local answer=$1
-		local expected=$2
+		# split the string by char.
+		declare -A digits=()
+		strToArray "$line"
+		# echo ${digits[@]}
 
-		if [[ $expected != "" ]]; then 
-			if [[ $answer -eq $expected ]]; then
-				echo "OK"
-			else
-				echo "Error"
-				exit 1
-			fi
-		else
-			echo
-		fi
+		# loop
+
+		while [[ ${#answer} -lt 12 ]]; do
+
+			# find the highest digit between index 0-> (15-12) (lineLen - outputLen)
+			# echo -ne "$line : "
+			highestDigit
+			answer+="$highestValue"
+			# echo "[$highestValueIdx] $highestValue. $answer"
+			((outputLen--))
+
+			# remove the chars on and before the selected char
+			line="${line:$highestValueIdx +1}"
+			# split the string by char.
+			strToArray "$line"
+
+		done
+
+		echo "$ogline=$answer" >> ${outputfile}
 	}
 
 	strToArray()
@@ -147,66 +97,41 @@ output_file=output.txt
 rm -f ${output_file}
 
 # progress bar
-# total=$(wc -l $input_file | grep -Eo '\d+')
-# echo -ne "Progress:\n "
+	total=$(wc -l $input_file | grep -Eo '\d+')
+	echo -ne "Progress:\n "
 
-# for (( j = 1; j <= total; j++ )); do
-# 	echo -ne " "
-# done
-# echo -ne "]\r["
+	for (( j = 1; j <= total; j++ )); do
+		echo -ne " "
+	done
+	echo -ne "]\r["
+# progress bar
+
 
 # read the input file
 sum=0
 
 while IFS='|' read -u 11 -r line expected; do
-	# echo -ne "$line : "
-	# lineLen=${#line}
-	outputLen=12
-	answer=""
-
-	# rm -f ${output_file};
-
-	# split the string by char.
-	declare -A digits=()
-	strToArray "$line"
-	# echo ${digits[@]}
-
-	# echo; cat ${output_file};
-
-	# loop
-	echo -ne "$line : "
-	i=0
-	while [[ ${#answer} -lt 12 ]]; do
-
-		# find the highest digit between index 0-> (15-12) (lineLen - outputLen)
-		# echo -ne "$line : "
-		highestDigit
-		answer+="$highestValue"
-		# echo "[$highestValueIdx] $highestValue. $answer"
-		((outputLen--))
-
-		# remove the chars on and before the selected char
-		line="${line:$highestValueIdx +1}"
-		# split the string by char.
-		strToArray "$line"
-
-		((i++))
-		# if (( i == 3 )); then 
-		# 	break
-		# fi
-	done
-
-	echo "$answer"
-	((sum += answer))
-
+	process-line "$line" "${output_file}" && echo -ne "." &
+	# ((sum += answer))
 done 11< $input_file
 
+wait
+
 # # Read/sum output file
-# sum=$(awk -F'=' '{ sum += $2; } END { print sum }' ${output_file})
-# echo -e "\n"
+sum=$(awk -F'=' '{ sum += $2; } END { print sum }' ${output_file})
+echo -e "\n"
 echo "Sum             = $sum"
 
-# rm -f ${output_file}
+expected=169347417057382
+echo "expected result = $expected"
+if (( sum != expected )); then
+	echo "Error!"
+	exit 1;
+else
+	echo "It worked!"
+fi
+
+rm -f ${output_file}
 exit;
 
 
