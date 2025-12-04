@@ -245,7 +245,11 @@ done
 # echo -e "\n"
 echo "Sum             = $sum"
 
-expected=13
+expected=1451
+if [[ $input_file == "example.txt" ]]; then
+	expected=13
+fi
+
 echo "expected result = $expected"
 if (( sum != expected )); then
 	echo "Error!"
