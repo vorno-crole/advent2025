@@ -164,7 +164,7 @@ row=0
 
 # put chars into 2d array
 while read -u 11 -r line; do
-	echo $line
+	# echo $line
 	lineLen=${#line}
 	
 	col=0
@@ -179,7 +179,7 @@ while read -u 11 -r line; do
 
 done 11< <(tr '.@' '01' < $input_file)
 
-echo
+# echo
 # echo ${matrix[@]}
 # exit;
 
@@ -216,21 +216,20 @@ for (( row=0; row <= maxrows; row++ )); do
 					continue;
 				fi
 
-				# echo $checkrow $checkcol
-
 				checkvalue="$(getArrayValue $((row + checkrow)) $((col + checkcol)))"
 				((adjacent+=checkvalue))
 			done
 		done
 
-		echo -ne $adjacent
 
 		if (( adjacent < 4 )); then
 			# echo -ne x
+			echo -ne "$GRN"
+			echo -ne $adjacent
+			echo -ne "$RES"
 			(( sum++ ))
 		else
-			# echo -ne @
-			true
+			echo -ne $adjacent
 		fi
 	done
 
