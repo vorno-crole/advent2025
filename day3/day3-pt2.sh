@@ -15,6 +15,26 @@
 		{
 			read -p "Press Enter to continue."
 		}
+
+		progressBar()
+		{
+			local input_file=$1
+			local total=$(wc -l $input_file | grep -Eo '\d+')
+			local j
+
+			echo -ne "Progress:\n["
+			eval "printf -- ' %0.s' {1..$total}"
+			echo -ne "]"
+
+			if (( COLUMNS <= total )); then
+				# echo "Big."
+				# echo "Cols  $COLUMNS"
+				# echo "Total $total"
+
+				tput cuu 1 # move up 1 col
+			fi
+			echo -ne "\r["
+		}
 	# end functions
 
 	if [[ $1 == 'example' || $1 == 'example.txt' ]]; then
@@ -96,16 +116,7 @@
 output_file=output.txt
 rm -f ${output_file}
 
-# progress bar
-	total=$(wc -l $input_file | grep -Eo '\d+')
-	echo -ne "Progress:\n "
-
-	for (( j = 1; j <= total; j++ )); do
-		echo -ne " "
-	done
-	echo -ne "]\r["
-# progress bar
-
+progressBar "${input_file}"
 
 # read the input file
 sum=0
@@ -136,13 +147,13 @@ exit;
 
 
 # --- Part Two ---
-# The escalator doesn't move. 
-# The Elf explains that it probably needs more joltage to overcome the static friction of the system and hits the big red "joltage limit safety override" button. 
+# The escalator doesn't move.
+# The Elf explains that it probably needs more joltage to overcome the static friction of the system and hits the big red "joltage limit safety override" button.
 # You lose count of the number of times she needs to confirm "yes, I'm sure" and decorate the lobby a bit while you wait.
 
 # Now, you need to make the largest joltage by turning on exactly twelve batteries within each bank.
 
-# The joltage output for the bank is still the number formed by the digits of the batteries you've turned on; 
+# The joltage output for the bank is still the number formed by the digits of the batteries you've turned on;
 # the only difference is that now there will be 12 digits in each bank's joltage output instead of two.
 
 # Consider again the example from before:
@@ -171,7 +182,7 @@ exit;
 
 # --- Part One ---
 
-# There are batteries nearby that can supply emergency power to the escalator for just such an occasion. 
+# There are batteries nearby that can supply emergency power to the escalator for just such an occasion.
 # The batteries are each labeled with their joltage rating, a value from 1 to 9.
 # You make a note of their joltage ratings (your puzzle input). For example:
 
@@ -179,9 +190,9 @@ exit;
 # 811111111111119
 # 234234234234278
 # 818181911112111
-# The batteries are arranged into banks; each line of digits in your input corresponds to a single bank of batteries. 
-# Within each bank, you need to turn on exactly two batteries; 
-# the joltage that the bank produces is equal to the number formed by the digits on the batteries you've turned on. 
+# The batteries are arranged into banks; each line of digits in your input corresponds to a single bank of batteries.
+# Within each bank, you need to turn on exactly two batteries;
+# the joltage that the bank produces is equal to the number formed by the digits on the batteries you've turned on.
 # For example, if you have a bank like 12345 and you turn on batteries 2 and 4, the bank would produce 24 jolts. (You cannot rearrange batteries.)
 
 # You'll need to find the largest possible joltage each bank can produce. In the above example:
