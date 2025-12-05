@@ -201,8 +201,15 @@ else
 	echo "cannot optimise any further..."
 
 	cat sums.txt
+
+	echo -ne "After this many iterations: "
+	wc -l sums.txt | grep -Eo '\d+'
+
+	echo -ne "Grand total is: "
+	awk '{ sum += $3 } END { print sum }' sums.txt
+
 fi
-	# 
+
 
 # rm -f ${output_file}
 exit;
