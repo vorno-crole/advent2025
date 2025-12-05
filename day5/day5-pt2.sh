@@ -70,6 +70,86 @@
 		echo 0;
 	}
 
+	countRange()
+	{
+		local low=$1 
+		local high=$2
+
+		echo $((high - low + 1))
+	}
+
+
+
+	# 3-5
+	# 10-14
+	# 16-20
+	# 12-18
+
+	insertRange()
+	{
+		local in-low=$1
+		local in-high=$2
+
+		# input 3, 5
+
+		# for range in "${ranges[@]}"; do
+		# 	low=${range%-*};
+		# 	high=${range##*-}
+
+		# 	if (( num >= low && num <= high)); then
+		# 		echo 1;
+		# 		return;
+		# 	fi
+		# done
+		# echo 0;
+
+
+		for key in "${!ranges[@]}"; do
+			value="${ranges[$key]}"
+			echo "Key: $key, Value: $value"
+
+			r-low=${value%-*}
+			r-high=${value##*-}
+
+			# # iterate ranges
+			# r-low = 1
+			# r-high = 10
+
+			update=0
+
+			if (( in-low >= r-low )); then 
+				# update r-low
+				r-low=${in-low}
+				update=1
+			fi
+
+			if (( in-high <= r-high )); then 
+				# update r-high
+				r-high=${in-high}
+				update=1
+			fi
+
+			if (( update == 1 )); then
+
+				unset;
+
+				set;
+
+				break;
+
+			fi
+			
+
+
+		done
+
+
+
+
+	}
+
+
+
 # functions
 
 rm -f ${output_file}
@@ -78,27 +158,20 @@ rm -f ${output_file}
 sum=0
 
 # put ranges into array
-ranges=()
+declare -A ranges
 mode=load
 echo "Load ranges"
 while IFS=- read -u 11 -r low high; do
 
 	if [[ $mode == "load" ]]; then
 		if [[ $low == "" ]]; then
-			echo -e "\nCheck values"
-			mode=check
-			continue
+			break
 		fi
 
-		echo "$low-$high"
-		ranges+=("$low-$high")
+		# echo -ne "$low-$high: "
+		# ranges+=("$low-$high")
+		((sum+=$(countRange $low $high)))
 
-	elif [[ $mode == "check" ]]; then
-		num=$low
-
-		fresh=$(checkNumber $num)
-		((sum+=fresh))
-		echo "$num: $fresh"
 	fi
 
 done 11< $input_file
@@ -133,6 +206,12 @@ echo -e "\n"
 
 # rm -f ${output_file}
 exit;
+
+
+
+
+
+
 
 
 # --- Part Two ---
