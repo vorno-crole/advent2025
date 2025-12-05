@@ -8,6 +8,11 @@
 	RED="\033[91;1m"
 	RES="\033[0m"
 
+	if [[ $1 == "" || $2 == "" ]]; then
+		echo "Usage: $0 input.txt 1"
+		exit 1;
+	fi
+
 	input_file="$1"
 	run=1
 	if [[ $2 != "" ]]; then
@@ -247,6 +252,15 @@ echo "Sum             = $sum" | tee -a sums.txt
 
 sort -n ${output_file} > ${output_file}2
 mv ${output_file}2 ${output_file}
+
+# check result
+goodResult=$(grep -E "^$run\|" sums-good.txt | awk -F'|' '{print $2}')
+echo "goodResult      = $goodResult"
+if (( sum != goodResult )); then
+	echo Error!
+	exit 1;
+fi
+
 
 # post-processing....
 
