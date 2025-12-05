@@ -169,19 +169,6 @@ sum=$(awk -F'|' '{ sum += $3; } END { print sum }' ${output_file})
 echo -e "\n"
 echo "Sum             = $sum" | tee -a sums.txt
 
-# expected=1451
-# if [[ $input_file == "example.txt" ]]; then
-# 	expected=13
-# fi
-
-# echo "expected result = $expected"
-# if (( sum != expected )); then
-# 	echo "Error!"
-# 	exit 1;
-# else
-# 	echo "It worked!"
-# fi
-
 sort -n ${output_file} > ${output_file}2
 mv ${output_file}2 ${output_file}
 
@@ -196,6 +183,7 @@ if (( sum > 0 )); then
 	awk -F'|' '{print $2}' ${output_file} | tr '0123' '...' | tr '456789' '@@@@@@' > input$nextRun.txt
 
 	./day4-pt2.sh input$nextRun.txt $nextRun 
+	exit;
 else
 
 	echo "cannot optimise any further..."
@@ -205,8 +193,17 @@ else
 	echo -ne "After this many iterations: "
 	wc -l sums.txt | grep -Eo '\d+'
 
-	echo -ne "Grand total is: "
-	awk '{ sum += $3 } END { print sum }' sums.txt
+	sum=$(awk '{ sum += $3 } END { print sum }' sums.txt)
+	echo "Grand total is: $sum"
+
+	expected=8701
+	echo "expected result = $expected"
+	if (( sum != expected )); then
+		echo "Error!"
+		exit 1;
+	else
+		echo "It worked!"
+	fi
 
 fi
 
