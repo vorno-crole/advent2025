@@ -44,123 +44,93 @@
 
 
 # functions
-	# process-line()
-	# {
-	# 	# local line=$1
-	# 	# local outputfile=$2
-	# 	# # echo -ne "$line : "
+	putArray()
+	{
+		local x=$1
+		local y=$2
+		local value=$3
 
-	# 	# answer=$(test-number "$line")
-	# 	# echo "$line=$answer" >> ${outputfile}
+		matrix["$x,$y"]="$value"
+	}
 
-	# 	local line=$1
-	# 	local outputfile=$2
-	# 	local ogline=$line
+	getArrayValue()
+	{
+		local x=$1
+		local y=$2
 
-	# 	outputLen=12
-	# 	answer=""
+		if (( x < 0 || x > maxrows )); then 
+			echo 0
+			return
+		fi
 
-	# 	# split the string by char.
-	# 	declare -A digits=()
-	# 	strToArray "$line"
-	# 	# echo ${digits[@]}
+		if (( y < 0 || y > maxcols )); then 
+			echo 0
+			return
+		fi
 
-	# 	# loop
+		# echo "[$x,$y] = ${matrix[$x,$y]}" >&2
+		echo "${matrix["$x,$y"]}"
+	}
 
-	# 	while [[ ${#answer} -lt 12 ]]; do
+	processLine()
+	{
+		row=$1
+		local col value adjacent checkrow checkcol checkvalue
+		local output=""
+		local sum=0
 
-	# 		# find the highest digit between index 0-> (15-12) (lineLen - outputLen)
-	# 		# echo -ne "$line : "
-	# 		highestDigit
-	# 		answer+="$highestValue"
-	# 		# echo "[$highestValueIdx] $highestValue. $answer"
-	# 		((outputLen--))
+		for (( col=0; col <= maxcols; col++ )); do
 
-	# 		# remove the chars on and before the selected char
-	# 		line="${line:$highestValueIdx +1}"
-	# 		# split the string by char.
-	# 		strToArray "$line"
+			# check value.
+			value="$(getArrayValue $row $col)"
+			# echo -ne $value
 
-	# 	done
+			# if 0, skip.
+			if (( value == 0 )); then
+				# echo -ne .
+				output+="."
+				continue;
+			fi
 
-	# 	echo "$ogline=$answer" >> ${outputfile}
-	# }
+			# assume value is 1.
+			# check adjacent values
+			adjacent=0
+			# echo checking
 
-	# strToArray()
-	# {
-	# 	digits=()
-	# 	local line=$1
-	# 	local digit
-	# 	local i=0
+			for (( checkrow=-1; checkrow <= 1; checkrow++ )); do
+				for (( checkcol=-1; checkcol <= 1; checkcol++ )); do
 
-	# 	while read -u 12 digit; do
-	# 		digits[$i]=$digit
-	# 		((i++))
-	# 	done 12< <(echo $line | grep -o .)
-	# }
+					if (( checkrow == 0 && checkcol == 0 )); then
+						continue;
+					fi
 
-	# highestDigit()
-	# {
-	# 	highestValue=-1
-	# 	highestValueIdx=-1
-	# 	local i
-	# 	for (( i=0; i <= ${#line} - outputLen; i++ )); do
-	# 		if [[ ${digits[$i]} -gt $highestValue ]]; then
-	# 			highestValue=${digits[$i]};
-	# 			highestValueIdx=$i;
-	# 		fi
-	# 	done
-	# }
+					checkvalue="$(getArrayValue $((row + checkrow)) $((col + checkcol)))"
+					((adjacent+=checkvalue))
+				done
+			done
+
+			# echo -ne $adjacent
+			output+="$adjacent"
+
+			if (( adjacent < 4 )); then
+				(( sum++ ))
+			fi
+		done
+
+		echo "$row|$output|$sum" >> "${output_file}"
+	}
 # functions
 
-# output_file=output.txt
-# rm -f ${output_file}
 
-
-
-
-putArray()
-{
-	local x=$1
-	local y=$2
-	local value=$3
-
-	matrix["$x,$y"]="$value"
-}
-
-getArrayValue()
-{
-	local x=$1
-	local y=$2
-	# local value=$3
-
-	if (( x < 0 || x > maxrows )); then 
-		echo 0
-		return
-	fi
-
-	if (( y < 0 || y > maxcols )); then 
-		echo 0
-		return
-	fi
-
-	# echo "[$x,$y] = ${matrix[$x,$y]}" >&2
-
-	echo "${matrix["$x,$y"]}"
-}
-
-
-
-
-
-
-
-# progressBar "${input_file}"
+output_file=output.txt
+rm -f ${output_file}
 
 # read the input file
 sum=0
-declare -A matrix
 row=0
+declare -A matrix
+
+echo "Load data into array"
 
 # put chars into 2d array
 while read -u 11 -r line; do
@@ -173,75 +143,26 @@ while read -u 11 -r line; do
 		((col++))
 	done 12< <(echo $line | grep -o .)
 
-	# process-line "$line" "${output_file}" && echo -ne "." &
-	# ((sum += answer))
 	((row++))
-
 done 11< <(tr '.@' '01' < $input_file)
-
-# echo
-# echo ${matrix[@]}
-# exit;
-
 
 ((maxrows=row -1))
 ((maxcols=col -1))
-# TODO
-	# now process... somehow?
+
+
+echo "Processing data"
+progressBar "${input_file}"
 
 # iterate array
 for (( row=0; row <= maxrows; row++ )); do
-
-	for (( col=0; col <= maxcols; col++ )); do
-
-		# check value.
-		value="$(getArrayValue $row $col)"
-		# echo -ne $value
-
-		# if 0, skip.
-		if (( value == 0 )); then
-			echo -ne .
-			continue;
-		fi
-
-		# assume value is 1.
-		# check adjacent values
-		adjacent=0
-		# echo checking
-
-		for (( checkrow=-1; checkrow <= 1; checkrow++ )); do
-			for (( checkcol=-1; checkcol <= 1; checkcol++ )); do
-
-				if (( checkrow == 0 && checkcol == 0 )); then
-					continue;
-				fi
-
-				checkvalue="$(getArrayValue $((row + checkrow)) $((col + checkcol)))"
-				((adjacent+=checkvalue))
-			done
-		done
-
-
-		if (( adjacent < 4 )); then
-			# echo -ne x
-			echo -ne "$GRN"
-			echo -ne $adjacent
-			echo -ne "$RES"
-			(( sum++ ))
-		else
-			echo -ne $adjacent
-		fi
-	done
-
-	echo
-	# break;
+	processLine $row && echo -ne "." &
 done
 
-# wait
+wait
 
 # # # Read/sum output file
-# sum=$(awk -F'=' '{ sum += $2; } END { print sum }' ${output_file})
-# echo -e "\n"
+sum=$(awk -F'|' '{ sum += $3; } END { print sum }' ${output_file})
+echo -e "\n"
 echo "Sum             = $sum"
 
 expected=1451
@@ -257,7 +178,8 @@ else
 	echo "It worked!"
 fi
 
-rm -f ${output_file}
+# rm -f ${output_file}
+# sort -n output.txt
 exit;
 
 
