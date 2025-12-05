@@ -8,7 +8,12 @@
 	RED="\033[91;1m"
 	RES="\033[0m"
 
-	input_file="input.txt"
+	input_file="$1"
+	run=1
+	if [[ $2 != "" ]]; then
+		run=$2
+	fi
+	output_file="output$run.txt"
 
 	# functions
 		pause()
@@ -19,7 +24,7 @@
 		progressBar()
 		{
 			local input_file=$1
-			local total=$(wc -l $input_file | grep -Eo '\d+')
+			local total=$(wc -l $input_file | grep -Eo '\d+' | head -1)
 			local j
 
 			echo -ne "Progress:\n["
@@ -37,7 +42,7 @@
 		}
 	# end functions
 
-	if [[ $1 == 'example' || $1 == 'example.txt' ]]; then
+	if [[ $input_file == 'example' ]]; then
 		input_file="example.txt"
 	fi
 # setup
@@ -122,7 +127,6 @@
 # functions
 
 
-output_file=output.txt
 rm -f ${output_file}
 
 # read the input file
@@ -163,24 +167,185 @@ wait
 # # # Read/sum output file
 sum=$(awk -F'|' '{ sum += $3; } END { print sum }' ${output_file})
 echo -e "\n"
-echo "Sum             = $sum"
+echo "Sum             = $sum" | tee -a sums.txt
 
-expected=1451
-if [[ $input_file == "example.txt" ]]; then
-	expected=13
-fi
+# expected=1451
+# if [[ $input_file == "example.txt" ]]; then
+# 	expected=13
+# fi
 
-echo "expected result = $expected"
-if (( sum != expected )); then
-	echo "Error!"
-	exit 1;
+# echo "expected result = $expected"
+# if (( sum != expected )); then
+# 	echo "Error!"
+# 	exit 1;
+# else
+# 	echo "It worked!"
+# fi
+
+sort -n ${output_file} > ${output_file}2
+mv ${output_file}2 ${output_file}
+
+# post-processing....
+
+# create next input file (input2.txt ?)
+if (( sum > 0 )); then
+
+	echo "needs another round..."
+
+	((nextRun=run+1))
+	awk -F'|' '{print $2}' ${output_file} | tr '0123' '...' | tr '456789' '@@@@@@' > input$nextRun.txt
+
+	./day4-pt2.sh input$nextRun.txt $nextRun 
 else
-	echo "It worked!"
+
+	echo "cannot optimise any further..."
+
+	cat sums.txt
 fi
+	# 
 
 # rm -f ${output_file}
-# sort -n output.txt
 exit;
+
+
+# --- Part Two ---
+
+# Now, the Elves just need help accessing as much of the paper as they can.
+
+# Once a roll of paper can be accessed by a forklift, it can be removed. 
+# Once a roll of paper is removed, the forklifts might be able to access more rolls of paper, 
+# which they might also be able to remove. 
+# How many total rolls of paper could the Elves remove if they keep repeating this process?
+
+# Starting with the same example as above, 
+# here is one way you could remove as many rolls of paper as possible, 
+# using highlighted @ to indicate that a roll of paper is about to be removed, 
+# and using x to indicate that a roll of paper was just removed:
+
+# Initial state:
+# ..@@.@@@@.
+# @@@.@.@.@@
+# @@@@@.@.@@
+# @.@@@@..@.
+# @@.@@@@.@@
+# .@@@@@@@.@
+# .@.@.@.@@@
+# @.@@@.@@@@
+# .@@@@@@@@.
+# @.@.@@@.@.
+
+# Remove 13 rolls of paper:
+# ..xx.xx@x.
+# x@@.@.@.@@
+# @@@@@.x.@@
+# @.@@@@..@.
+# x@.@@@@.@x
+# .@@@@@@@.@
+# .@.@.@.@@@
+# x.@@@.@@@@
+# .@@@@@@@@.
+# x.x.@@@.x.
+
+# Remove 12 rolls of paper:
+# .......x..
+# .@@.x.x.@x
+# x@@@@...@@
+# x.@@@@..x.
+# .@.@@@@.x.
+# .x@@@@@@.x
+# .x.@.@.@@@
+# ..@@@.@@@@
+# .x@@@@@@@.
+# ....@@@...
+
+# Remove 7 rolls of paper:
+# ..........
+# .x@.....x.
+# .@@@@...xx
+# ..@@@@....
+# .x.@@@@...
+# ..@@@@@@..
+# ...@.@.@@x
+# ..@@@.@@@@
+# ..x@@@@@@.
+# ....@@@...
+
+# Remove 5 rolls of paper:
+# ..........
+# ..x.......
+# .x@@@.....
+# ..@@@@....
+# ...@@@@...
+# ..x@@@@@..
+# ...@.@.@@.
+# ..x@@.@@@x
+# ...@@@@@@.
+# ....@@@...
+
+# Remove 2 rolls of paper:
+# ..........
+# ..........
+# ..x@@.....
+# ..@@@@....
+# ...@@@@...
+# ...@@@@@..
+# ...@.@.@@.
+# ...@@.@@@.
+# ...@@@@@x.
+# ....@@@...
+
+# Remove 1 roll of paper:
+# ..........
+# ..........
+# ...@@.....
+# ..x@@@....
+# ...@@@@...
+# ...@@@@@..
+# ...@.@.@@.
+# ...@@.@@@.
+# ...@@@@@..
+# ....@@@...
+
+# Remove 1 roll of paper:
+# ..........
+# ..........
+# ...x@.....
+# ...@@@....
+# ...@@@@...
+# ...@@@@@..
+# ...@.@.@@.
+# ...@@.@@@.
+# ...@@@@@..
+# ....@@@...
+
+# Remove 1 roll of paper:
+# ..........
+# ..........
+# ....x.....
+# ...@@@....
+# ...@@@@...
+# ...@@@@@..
+# ...@.@.@@.
+# ...@@.@@@.
+# ...@@@@@..
+# ....@@@...
+
+# Remove 1 roll of paper:
+# ..........
+# ..........
+# ..........
+# ...x@@....
+# ...@@@@...
+# ...@@@@@..
+# ...@.@.@@.
+# ...@@.@@@.
+# ...@@@@@..
+# ....@@@...
+
+# Stop once no more rolls of paper are accessible by a forklift. In this example, a total of 43 rolls of paper can be removed.
+
+# Start with your original diagram. How many rolls of paper in total can be removed by the Elves and their forklifts?
+
 
 
 # --- Part One ---
@@ -221,5 +386,3 @@ exit;
 # Consider your complete diagram of the paper roll locations. 
 # How many rolls of paper can be accessed by a forklift?
 
-
-# --- Part Two ---
