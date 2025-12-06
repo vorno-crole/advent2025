@@ -91,6 +91,79 @@
 		# sort -n -u -o ranges.txt ranges.txt
 	}
 
+
+
+	# 3-5
+	# 10-14
+	# 16-20
+	# 12-18
+
+
+				
+# input	3-10			
+# 		update	new range	remove existing range
+# ranges	1-2	no		
+# 	11-20	no		
+# 	1-5	yes	1-10	y
+# 	5-10	yes	1-10	y
+# 	6-20	yes	6-20	y
+				
+
+
+
+	insertRange()
+	{
+		local in-low=$1
+		local in-high=$2
+
+		# input 3, 5
+
+		for key in "${!ranges[@]}"; do
+			value="${ranges[$key]}"
+			echo "Key: $key, Value: $value"
+
+			r-low=${value%-*}
+			r-high=${value##*-}
+
+			# # iterate ranges
+			# r-low = 1
+			# r-high = 10
+
+			update=0
+
+			if (( in-low >= r-low )); then 
+				# update r-low
+				r-low=${in-low}
+				in-low
+				update=1
+			fi
+
+			if (( in-high <= r-high )); then 
+				# update r-high
+				r-high=${in-high}
+				update=1
+			fi
+
+			if (( update == 1 )); then
+
+				unset;
+
+				set;
+
+				break;
+
+			fi
+			
+
+
+		done
+
+
+
+
+	}
+
+
 # functions
 
 rm -f ${output_file}
