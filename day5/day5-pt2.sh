@@ -23,8 +23,9 @@
 
 		progressBar()
 		{
-			local input_file=$1
-			local total=$(wc -l $input_file | grep -Eo '\d+' | head -1)
+			# local input_file=$1
+			# local total=$(wc -l $input_file | grep -Eo '\d+' | head -1)
+			local total=$1
 			local j
 
 			echo -ne "Progress:\n["
@@ -78,89 +79,35 @@
 		echo $((high - low + 1))
 	}
 
-
-
-	# 3-5
-	# 10-14
-	# 16-20
-	# 12-18
-
-	insertRange()
+	insertRange2()
 	{
-		local in-low=$1
-		local in-high=$2
+		local low=$1
+		local high=$2
 
-		# input 3, 5
+		echo -ne "inserting range: "
+		countRange $low $high
 
-		# for range in "${ranges[@]}"; do
-		# 	low=${range%-*};
-		# 	high=${range##*-}
-
-		# 	if (( num >= low && num <= high)); then
-		# 		echo 1;
-		# 		return;
-		# 	fi
-		# done
-		# echo 0;
-
-
-		for key in "${!ranges[@]}"; do
-			value="${ranges[$key]}"
-			echo "Key: $key, Value: $value"
-
-			r-low=${value%-*}
-			r-high=${value##*-}
-
-			# # iterate ranges
-			# r-low = 1
-			# r-high = 10
-
-			update=0
-
-			if (( in-low >= r-low )); then 
-				# update r-low
-				r-low=${in-low}
-				update=1
-			fi
-
-			if (( in-high <= r-high )); then 
-				# update r-high
-				r-high=${in-high}
-				update=1
-			fi
-
-			if (( update == 1 )); then
-
-				unset;
-
-				set;
-
-				break;
-
-			fi
-			
-
-
-		done
-
-
-
-
+		ranges+=$(eval "printf -- '%d\n' {$low..$high}")
+		# sort -n -u -o ranges.txt ranges.txt
 	}
-
-
 
 # functions
 
 rm -f ${output_file}
+# rm -f ranges.txt
+ranges=""
 
 # read the input file
 sum=0
+
 
 # put ranges into array
 declare -A ranges
 mode=load
 echo "Load ranges"
+
+progressBar $(grep -n '^$' example.txt | cut -d: -f1)
+
 while IFS=- read -u 11 -r low high; do
 
 	if [[ $mode == "load" ]]; then
@@ -168,13 +115,13 @@ while IFS=- read -u 11 -r low high; do
 			break
 		fi
 
-		# echo -ne "$low-$high: "
-		# ranges+=("$low-$high")
-		((sum+=$(countRange $low $high)))
-
+		insertRange2 $low $high && echo -ne "."
 	fi
-
 done 11< $input_file
+
+echo -ne "$ranges" > ranges.txt
+sort -n -u -o ranges.txt ranges.txt
+sum=$(wc -l ranges.txt | grep -Eo '\d+' | head -1)
 
 # echo ${ranges[@]}
 echo
