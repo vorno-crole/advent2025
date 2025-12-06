@@ -73,7 +73,7 @@
 
 	countRange()
 	{
-		local low=$1 
+		local low=$1
 		local high=$2
 
 		echo $((high - low + 1))
@@ -99,15 +99,15 @@
 	# 12-18
 
 
-				
-# input	3-10			
-# 		update	new range	remove existing range
-# ranges	1-2	no		
-# 	11-20	no		
-# 	1-5	yes	1-10	y
-# 	5-10	yes	1-10	y
-# 	6-20	yes	6-20	y
-				
+
+# input	3-10
+# 					update	new range	remove existing range
+# ranges	1-2		no
+# 			11-20	no
+# 			1-5		yes		1-10		y
+# 			5-10	yes		1-10		y
+# 			6-20	yes		6-20		y
+
 
 
 
@@ -115,52 +115,53 @@
 	{
 		local in-low=$1
 		local in-high=$2
+		local update=1
 
 		# input 3, 5
-
-		for key in "${!ranges[@]}"; do
-			value="${ranges[$key]}"
-			echo "Key: $key, Value: $value"
-
-			r-low=${value%-*}
-			r-high=${value##*-}
-
-			# # iterate ranges
-			# r-low = 1
-			# r-high = 10
-
+		while (( update == 1 )); do
 			update=0
 
-			if (( in-low >= r-low )); then 
-				# update r-low
-				r-low=${in-low}
-				in-low
-				update=1
-			fi
+			for key in "${!ranges[@]}"; do
+				value="${ranges[$key]}"
+				echo "Key: $key, Value: $value"
 
-			if (( in-high <= r-high )); then 
-				# update r-high
-				r-high=${in-high}
-				update=1
-			fi
+				r-low=${value%-*}
+				r-high=${value##*-}
 
-			if (( update == 1 )); then
+				# # iterate ranges
+				# r-low = 1
+				# r-high = 10
 
-				unset;
+				if (( in-low >= r-low )); then
+					# update r-low
+					r-low=${in-low}
+					in-low
+					update=1
+				fi
 
-				set;
+				if (( in-high <= r-high )); then
+					# update r-high
+					r-high=${in-high}
+					update=1
+				fi
 
-				break;
+				if (( update == 1 )); then
 
-			fi
-			
+					unset;
 
+					set;
+
+					break;
+
+				fi
+
+
+
+			done
 
 		done
 
-
-
-
+		ranges[$low]="${in-low}-${in-high}"
 	}
 
 
@@ -238,11 +239,11 @@ exit;
 
 # The Elves start bringing their spoiled inventory to the trash chute at the back of the kitchen.
 
-# So that they can stop bugging you when they get new inventory, 
-# the Elves would like to know all of the IDs that the fresh ingredient ID ranges consider to be fresh. 
+# So that they can stop bugging you when they get new inventory,
+# the Elves would like to know all of the IDs that the fresh ingredient ID ranges consider to be fresh.
 # An ingredient ID is still considered fresh if it is in any range.
 
-# Now, the second section of the database (the available ingredient IDs) is irrelevant. 
+# Now, the second section of the database (the available ingredient IDs) is irrelevant.
 # Here are the fresh ingredient ID ranges from the above example:
 
 # 3-5
@@ -250,7 +251,7 @@ exit;
 # 16-20
 # 12-18
 
-# The ingredient IDs that these ranges consider to be fresh are 3, 4, 5, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, and 20. 
+# The ingredient IDs that these ranges consider to be fresh are 3, 4, 5, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, and 20.
 # So, in this example, the fresh ingredient ID ranges consider a total of 14 ingredient IDs to be fresh.
 
 # Process the database file again. How many ingredient IDs are considered to be fresh according to the fresh ingredient ID ranges?
@@ -262,23 +263,23 @@ exit;
 
 # As the forklifts break through the wall, the Elves are delighted to discover that there was a cafeteria on the other side after all.
 
-# You can hear a commotion coming from the kitchen. 
+# You can hear a commotion coming from the kitchen.
 # "At this rate, we won't have any time left to put the wreaths up in the dining hall!" Resolute in your quest, you investigate.
 
 # "If only we hadn't switched to the new inventory management system right before Christmas!" another Elf exclaims. You ask what's going on.
 
-# The Elves in the kitchen explain the situation: because of their complicated new inventory management system, 
-# they can't figure out which of their ingredients are fresh and which are spoiled. When you ask how it works, 
+# The Elves in the kitchen explain the situation: because of their complicated new inventory management system,
+# they can't figure out which of their ingredients are fresh and which are spoiled. When you ask how it works,
 # they give you a copy of their database (your puzzle input).
 
-# The database operates on ingredient IDs. 
+# The database operates on ingredient IDs.
 # It consists of a list of fresh ingredient ID ranges, a blank line, and a list of available ingredient IDs. For example:
 
 # 3-5
 # 10-14
 # 16-20
 # 12-18
-# 
+#
 # 1
 # 5
 # 8
@@ -302,7 +303,7 @@ exit;
 
 # To begin, get your puzzle input.
 
-# Answer: 
- 
+# Answer:
+
 
 # You can also [Share] this puzzle.
