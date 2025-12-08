@@ -71,6 +71,21 @@
 		echo 0;
 	}
 
+	checkNumInRange()
+	{
+		local low=$1
+		local high=$2
+		local num=$3
+
+		# echo "$low $high"
+		if (( num >= low && num <= high)); then
+			echo 1;
+			return;
+		fi
+
+		echo 0;
+	}
+
 	countRange()
 	{
 		local low=$1
@@ -117,6 +132,15 @@
 		# input 3, 5
 		while (( update == 1 )); do
 			update=0
+			add=1
+
+			tracking=0
+			checknumber=-1
+			# checknumber=43423330466629
+
+			if (( inLow == checknumber || inHigh == checknumber )); then
+				tracking=1;
+			fi
 			
 
 			key=0
@@ -128,7 +152,7 @@
 				# rLow = 1
 				# rHigh = 10
 
-				if (( inLow < rLow && inHigh >= rLow )); then
+				if (( inLow <= rLow && inHigh >= rLow )); then
 					echo "A: dropping $rLow-$rHigh"
 
 					if (( rLow < inLow )); then
@@ -143,10 +167,13 @@
 					echo "new insert is ${inLow}-${inHigh}"
 				fi
 
-				# echo "input: ${inLow}-${inHigh}"
-				# echo "range: ${rLow}-${rHigh}"
+				if (( tracking == 1 )); then
+					echo "input: ${inLow}-${inHigh}"
+					echo "range: ${rLow}-${rHigh}"
+					pause
+				fi
 
-				if (( inLow <= rHigh && inHigh > rHigh )); then
+				if (( inLow <= rHigh && inHigh >= rHigh )); then
 					echo "B: dropping $rLow-$rHigh"
 
 					if (( rLow < inLow )); then
@@ -165,6 +192,32 @@
 					exit 1;
 				fi
 
+				if (( tracking == 1 )); then
+					echo "input: ${inLow}-${inHigh}"
+					echo "range: ${rLow}-${rHigh}"
+					pause
+				fi
+
+
+				# TODO check for the inverse?
+				#		inputlow AND inputhigh are both wholly contained within a range
+				if (( update == 0 )); then
+					checkInverse=0
+					((checkInverse+=$(checkNumInRange $rLow $rHigh $inLow)))
+					((checkInverse+=$(checkNumInRange $rLow $rHigh $inHigh)))
+					# echo "$checkInverse : $add"
+					# echo 
+
+					if (( checkInverse == 2 )); then
+						echo "do not add"
+						add=0
+						pause
+						break
+					fi
+					# pause
+				fi
+
+
 				if (( update == 1 )); then
 					# echo "input: ${inLow}-${inHigh}"
 					# echo "range: ${rLow}-${rHigh}"
@@ -181,13 +234,19 @@
 
 			done 12< ${ranges_file}
 
+			if (( add == 0 )); then
+				break;
+			fi
+
 		done
 
-		# ranges[$inLow]="${inLow}-${inHigh}"
-		echo -e "adding range ${inLow}-${inHigh}\n"
-		echo "${inLow}-${inHigh}" >> ${ranges_file}
-		# pause
-		# echo
+		if (( add == 1 )); then
+			# ranges[$inLow]="${inLow}-${inHigh}"
+			echo -e "adding range ${inLow}-${inHigh}\n"
+			echo "${inLow}-${inHigh}" >> ${ranges_file}
+			# pause
+			# echo
+		fi
 	}
 
 
@@ -228,11 +287,14 @@ done 11< $input_file
 
 # echo -ne "$ranges" > ranges.txt
 sort -n -u -o ranges.txt ranges.txt
-sum=$(wc -l ranges.txt | grep -Eo '\d+' | head -1)
+# sum=$(wc -l ranges.txt | grep -Eo '\d+' | head -1)
 
 sum=0
+rm -f ${ranges_file}2
 while IFS=- read -u 11 -r low high; do
-	((sum+=$(countRange $low $high)))
+	count=$(countRange $low $high)
+	echo "$low-$high=$count" >> ${ranges_file}2
+	((sum+=count))
 done 11< ${ranges_file}
 
 
