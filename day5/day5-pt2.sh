@@ -79,19 +79,6 @@
 		echo $((high - low + 1))
 	}
 
-	insertRange2()
-	{
-		local low=$1
-		local high=$2
-
-		echo -ne "inserting range: "
-		countRange $low $high
-
-		ranges+=$(eval "printf -- '%d\n' {$low..$high}")
-		# sort -n -u -o ranges.txt ranges.txt
-	}
-
-
 
 	# 3-5
 	# 10-14
@@ -113,91 +100,148 @@
 
 	insertRange()
 	{
-		local in-low=$1
-		local in-high=$2
+		local inLow=$1
+		local inHigh=$2
 		local update=1
+
+		declare -A dropRanges=()
+
+		echo -e "\ninserting range ${inLow}-${inHigh}"
+
+		if [[ ! -s ${ranges_file} ]]; then
+			echo "${inLow}-${inHigh}" >> ${ranges_file}
+			echo "adding without changes"
+			return
+		fi
 
 		# input 3, 5
 		while (( update == 1 )); do
 			update=0
+			
 
-			for key in "${!ranges[@]}"; do
-				value="${ranges[$key]}"
-				echo "Key: $key, Value: $value"
-
-				r-low=${value%-*}
-				r-high=${value##*-}
+			key=0
+			while IFS=- read -u 12 -r rLow rHigh; do
+				((key++))
+				echo "$key: checking ${rLow}-${rHigh}"
 
 				# # iterate ranges
-				# r-low = 1
-				# r-high = 10
+				# rLow = 1
+				# rHigh = 10
 
-				if (( in-low >= r-low )); then
-					# update r-low
-					r-low=${in-low}
-					in-low
+				if (( inLow < rLow && inHigh >= rLow )); then
+					echo "A: dropping $rLow-$rHigh"
+
+					if (( rLow < inLow )); then
+						inLow=$rLow
+					fi
+
+					if (( rHigh > inHigh )); then
+						inHigh=$rHigh
+					fi
+
 					update=1
+					echo "new insert is ${inLow}-${inHigh}"
 				fi
 
-				if (( in-high <= r-high )); then
-					# update r-high
-					r-high=${in-high}
+				# echo "input: ${inLow}-${inHigh}"
+				# echo "range: ${rLow}-${rHigh}"
+
+				if (( inLow <= rHigh && inHigh > rHigh )); then
+					echo "B: dropping $rLow-$rHigh"
+
+					if (( rLow < inLow )); then
+						inLow=$rLow
+					fi
+
+					if (( rHigh > inHigh )); then
+						inHigh=$rHigh
+					fi
 					update=1
+					echo "new insert is ${inLow}-${inHigh}"
+				fi
+
+				if (( inHigh < inLow )); then
+					echo "Error!"
+					exit 1;
 				fi
 
 				if (( update == 1 )); then
-
-					unset;
-
-					set;
-
+					# echo "input: ${inLow}-${inHigh}"
+					# echo "range: ${rLow}-${rHigh}"
+					# pause
+					sed -i '' "${key}d" ${ranges_file}
+					# pause
+					# dropRanges+=($rLow);
+					echo "rerun!"
+					echo "input: ${inLow}-${inHigh}"
 					break;
-
+				# else
+				# 	echo "adding without changes"
 				fi
 
-
-
-			done
+			done 12< ${ranges_file}
 
 		done
 
-		ranges[$low]="${in-low}-${in-high}"
+		# ranges[$inLow]="${inLow}-${inHigh}"
+		echo -e "adding range ${inLow}-${inHigh}\n"
+		echo "${inLow}-${inHigh}" >> ${ranges_file}
+		# pause
+		# echo
 	}
 
 
 # functions
 
+ranges_file=ranges.txt
+
 rm -f ${output_file}
-# rm -f ranges.txt
-ranges=""
+rm -f ${ranges_file}
+touch ${ranges_file}
+
 
 # read the input file
 sum=0
 
 
 # put ranges into array
-declare -A ranges
+# declare -A ranges
 mode=load
 echo "Load ranges"
 
 progressBar $(grep -n '^$' example.txt | cut -d: -f1)
 
+i=0
 while IFS=- read -u 11 -r low high; do
-
+	((i++))
 	if [[ $mode == "load" ]]; then
 		if [[ $low == "" ]]; then
 			break
 		fi
 
-		insertRange2 $low $high && echo -ne "."
+		insertRange $low $high # && echo -ne "."
+		# if (( i == 2 )); then 
+		# 	break;
+		# fi
 	fi
 done 11< $input_file
 
-echo -ne "$ranges" > ranges.txt
+# echo -ne "$ranges" > ranges.txt
 sort -n -u -o ranges.txt ranges.txt
 sum=$(wc -l ranges.txt | grep -Eo '\d+' | head -1)
 
-# echo ${ranges[@]}
+sum=0
+while IFS=- read -u 11 -r low high; do
+	((sum+=$(countRange $low $high)))
+done 11< ${ranges_file}
+
+
+
+
+# ranges.txt should be:
+# 3-5
+# 10-20
+
 echo
 echo "Sum             = $sum"
 
