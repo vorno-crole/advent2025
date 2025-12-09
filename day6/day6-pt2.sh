@@ -16,6 +16,10 @@
 
 	input_file="$1"
 
+	if [[ $input_file == 'example' ]]; then
+		input_file="example.txt"
+	fi
+
 	# functions
 		pause()
 		{
@@ -42,52 +46,26 @@
 			echo -ne "\r["
 		}
 	# end functions
-
-	if [[ $input_file == 'example' ]]; then
-		input_file="example.txt"
-	fi
 # setup
 
 
-# functions
-	# checkNumber()
-	# {
-	# 	local num=$1
-	# 	local low high
-
-	# 	for range in "${ranges[@]}"; do
-
-	# 		# echo -ne "$range "
-	# 		low=${range%-*};
-	# 		high=${range##*-}
-
-	# 		# echo "$low $high"
-
-	# 		if (( num >= low && num <= high)); then
-	# 			echo 1;
-	# 			return;
-	# 		fi
-	# 	done
-	# 	echo 0;
-	# }
-
-# functions
-
+# prep
 output_file='output.txt'
 rm -f $output_file
 
-# order the input file
+
+# order the input file - last line first, lines 2+ onwards
 numLines=$(wc -l < ${input_file} | grep -Eo '\d+')
 tail -1 ${input_file} > ${input_file}2
 head -$((numLines -1)) ${input_file} >> ${input_file}2
 
 
 # work out the width of each column
+# put each line into an array
 delimiters=()
 lineNum=0
 lines=()
 while IFS= read -u 11 -r line; do
-
 	# iterate through line characters
 	thisSum=""
 
@@ -123,7 +101,8 @@ echo
 # exit
 
 
-# read each column, top to bottom, across all lines, to build the numbers
+# read each column, top to bottom across all lines, to build the numbers and equasions
+# output into a file
 col=0
 maxCols=${#delimiters[@]}
 maxLineLen=0
@@ -167,20 +146,17 @@ while (( col <= maxCols -1 )); do
 	# echo "${sums[@]}"
 
 	answer=$((${sums[@]}))
-	echo "${sums[@]} = $answer"
-	echo "${sums[@]} = $answer" >> $output_file
+	echo "${sums[@]} = $answer" | tee -a $output_file
 
 	((col++))
 done;
 
 
-
-
-
-
+# Sum the output file
 sum=$(awk -F'=' '{ sum += $2 } END { print sum }' $output_file)
 echo
 echo "Grand total: $sum"
+
 # rm -f ${output_file}
 exit;
 
