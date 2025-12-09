@@ -73,7 +73,8 @@
 
 # functions
 
-output_file='output1.txt'
+output_file='output.txt'
+rm -f $output_file
 
 # order the input file
 numLines=$(wc -l < ${input_file} | grep -Eo '\d+')
@@ -84,134 +85,88 @@ head -$((numLines -1)) ${input_file} >> ${input_file}2
 # work out the width of each column
 delimiters=()
 lineNum=0
-while read -u 11 -r line; do
+lines=()
+while IFS= read -u 11 -r line; do
 
 	# iterate through line characters
 	thisSum=""
 
-	for (( i=0; i<${#line}; i++ )); do
-		char="${line:$i:1}"  # Extract one character at index 'i'
-		# echo -ne "Character: '$char'"
+	if (( lineNum == 0 )); then
+		for (( i=0; i<${#line}; i++ )); do
+			char="${line:$i:1}"  # Extract one character at index 'i'
+			# echo -ne "Character: '$char'"
 
-		if [[ $lineNum -eq 0 && $char != ' ' ]]; then
-			# echo -ne " new sum"
-			delimiters+=($((i)))
-		fi
-
-		# echo
-	done
-
-	((lineNum++))
-	break;
-done 11< ${input_file}2
-
-echo ${delimiters[@]}
-
-# next step, re-read file, go through each column and pop them somewhere.
-
-lineNum=0
-while IFS= read -u 11 -r line; do
-	# echo "$lineNum - $line"
-
-	# iterate through line characters
-	# lineLen=${#line}
-	sumNum=0
-	lastSum=0 # is this the last sum on the line?
-	maxWidth=0
-
-	while ((lastSum == 0)); do
-		sumCharStart=$((delimiters[sumNum]))
-		sumCharEnd=$((delimiters[sumNum+1] -1))
-
-		if (( sumCharEnd > 1 )); then
-			echo -ne "This sum's chars: "
-			printf "%02d -> %02d   " $sumCharStart $sumCharEnd
-			sumWidth=$((sumCharEnd-sumCharStart))
-			sum="${line:$sumCharStart:$sumWidth}"
-
-			if (( maxWidth < sumWidth )); then
-				maxWidth=$sumWidth
+			if [[ $lineNum -eq 0 && $char != ' ' ]]; then
+				# echo -ne " new sum"
+				delimiters+=($((i)))
 			fi
-		else
-			sumCharEnd="(end)"
-			((lastSum++))
-			echo -ne "This sum's chars: $sumCharStart -> $sumCharEnd"
 
-			sum="${line:$sumCharStart}"
-			sumWidth=${#sum}
+			# echo
+		done
+	fi
 
-			if [[ ${#sum} -lt $maxWidth ]]; then
-				((diff=maxWidth-sumWidth))
-				sum+=$(eval "printf -- ' %0.s' {1..$diff}")
-			fi
-		fi
-
-		sum=$(echo "${sum// /.}")
-		echo "  [$sum]"
-
-		((sumNum++))
-	done;
-
-	echo
-
-
-	# exit;
-
-	# for (( i=0; i<${#line}; i++ )); do
-	# 	char="${line:$i:1}"  # Extract one character at index 'i'
-	# 	# echo -ne "Character: '$char'"
-
-	# 	if [[ $lineNum -eq 0 && $char != ' ' ]]; then
-	# 		# echo -ne " new sum"
-	# 		delimiters+=($i)
-	# 	fi
-
-	# 	echo
-	# done
-
+	lines[$lineNum]="$line"
 	((lineNum++))
 	# break;
 done 11< ${input_file}2
 
+echo "delimiters:"
+echo ${delimiters[@]}
 
-exit;
+echo -e "\nlines:"
+for line in "${lines[@]}"; do
+	echo "$line"
+done
+numLines=${#lines[@]}
+echo "num lines: ${numLines}"
+echo
+# exit
 
 
-# then
-sum=0
-	# echo "$line";
+# read each column, top to bottom, across all lines, to build the numbers
+col=0
+delimStart=$((delimiters[col]))
+delimEnd=$((delimiters[col+1] -1))
 
-	i=0
-	sign=""
-	output=""
+echo "column $col: $delimStart -> $delimEnd"
+op=""
+for (( c = delimStart; c < delimEnd; c++ )); do
+	sum=""
+	for (( lineNum = 0; lineNum <= numLines; lineNum++ )); do
+		line="${lines[$lineNum]}"
 
-	while read -u 12 -r num; do
-		# echo "$num"
-		if (( i == 0 )); then
-			# echo "found the sign: $num"
-			sign="$num"
-			((i++))
-			continue
+		if (( lineNum == 0 && c == 0 )); then
+			op="${line:c:1}"
+			echo "operation: $op"
 		fi
 
-		output+="$num$sign"
-		((i++))
-	done 12< <(awk -f split.awk <<< "$line")
+		if (( lineNum > 0 )); then
+			sum+="${line:c:1}"
+		fi
+	done
 
-	# remove last char
-	output="${output%?}"
+	sums+=("$sum")
+	sums+=("$op")
+	# echo "$sum"
+done
 
-	echo -ne "$output=";
-	answer="$(( $output ))"
-	echo "$answer"
-	((sum+=answer))
+unset sums[${#sums[@]}-1] # remove last operand
+answer=$((${sums[@]}));
+
+echo "${sums[@]} = $answer" >> $output_file
 
 
 
-echo
-echo "Sum             = $sum"
 
-exit;
+
+
+
+
+
+
+
+
+
 
 
 
