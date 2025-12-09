@@ -125,51 +125,62 @@ echo
 
 # read each column, top to bottom, across all lines, to build the numbers
 col=0
-delimStart=$((delimiters[col]))
-delimEnd=$((delimiters[col+1] -1))
+maxCols=${#delimiters[@]}
+maxLineLen=0
 
-echo "column $col: $delimStart -> $delimEnd"
-op=""
-for (( c = delimStart; c < delimEnd; c++ )); do
-	sum=""
-	for (( lineNum = 0; lineNum <= numLines; lineNum++ )); do
-		line="${lines[$lineNum]}"
+while (( col <= maxCols -1 )); do
+	delimStart=$((delimiters[col]))
+	delimEnd=$((delimiters[col+1] -1))
+	sums=()
+	op=""
 
-		if (( lineNum == 0 && c == 0 )); then
-			op="${line:c:1}"
-			echo "operation: $op"
-		fi
+	if (( delimEnd < delimStart )); then
+		delimEnd=$maxLineLen
+	fi
 
-		if (( lineNum > 0 )); then
-			sum+="${line:c:1}"
-		fi
+	echo "column $col: $delimStart -> $delimEnd"
+	for (( c = delimStart; c < delimEnd; c++ )); do
+		sum=""
+		for (( lineNum = 0; lineNum <= numLines; lineNum++ )); do
+			line="${lines[$lineNum]}"
+			if (( maxLineLen < ${#line} )); then
+				maxLineLen=${#line}
+			fi
+
+			if (( lineNum == 0 && c == delimStart )); then
+				op="${line:c:1}"
+				# echo "operation: $op"
+			fi
+
+			if (( lineNum > 0 )); then
+				sum+="${line:c:1}"
+			fi
+		done
+
+		sums+=("$sum")
+		sums+=("$op")
+		# echo "$sum"
 	done
 
-	sums+=("$sum")
-	sums+=("$op")
-	# echo "$sum"
-done
+	unset sums[${#sums[@]}-1] # remove last operand
 
-unset sums[${#sums[@]}-1] # remove last operand
-answer=$((${sums[@]}));
+	# echo "${sums[@]}"
 
-echo "${sums[@]} = $answer" >> $output_file
+	answer=$((${sums[@]}))
+	echo "${sums[@]} = $answer"
+	echo "${sums[@]} = $answer" >> $output_file
 
-
-
+	((col++))
+done;
 
 
 
 
 
 
-
-
-
-
-
-
-
+sum=$(awk -F'=' '{ sum += $2 } END { print sum }' $output_file)
+echo
+echo "Grand total: $sum"
 # rm -f ${output_file}
 exit;
 
