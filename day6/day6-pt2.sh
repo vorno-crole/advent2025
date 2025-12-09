@@ -75,6 +75,12 @@
 
 output_file='output1.txt'
 
+# order the input file
+numLines=$(wc -l < ${input_file} | grep -Eo '\d+')
+tail -1 ${input_file} > ${input_file}2
+head -$((numLines -1)) ${input_file} >> ${input_file}2
+
+
 # work out the width of each column
 delimiters=()
 lineNum=0
@@ -97,7 +103,7 @@ while read -u 11 -r line; do
 
 	((lineNum++))
 	break;
-done 11< <(tac $input_file)
+done 11< ${input_file}2
 
 echo ${delimiters[@]}
 
@@ -152,7 +158,7 @@ while IFS= read -u 11 -r line; do
 
 	((lineNum++))
 	# break;
-done 11< <(tac $input_file)
+done 11< ${input_file}2
 
 
 exit;
