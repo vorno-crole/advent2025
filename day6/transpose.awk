@@ -1,13 +1,13 @@
 # main prog: load data
 {
-for (i=1; i<=NF; i++)
+split($0, chars, "")
+for (i=1; i<=length($0); i++)
 {
 a[NR,i] = $i
-}
-# find max num of cols
-if (NF > max)
+if (i > max)
 {
 max = NF
+}
 }
 }
 
