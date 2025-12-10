@@ -160,6 +160,25 @@
 		echo $char
 	}
 
+	addValue()
+	{
+		addCounter $1 $2 $3
+	}
+
+	getValue()
+	{
+		local x="$1"
+		local y="$2"
+		local key="$x,$y"
+		local value=0
+
+		if [[ ${counter[$key]} != "" ]]; then
+			value="${counter[$key]}"
+		fi
+
+		echo "$value"
+	}
+
 	addCounter()
 	{
 		local x="$1"
@@ -190,7 +209,7 @@
 # functions
 
 # prep
-output_file='output-paths.txt'
+output_file='output-calcs.txt'
 rm -f $output_file
 
 # create the solution
@@ -209,37 +228,33 @@ done 11< ${input_file}
 
 # echo "${lines[@]}"
 
-# Find the start pos
-line="${lines[0]}"
-startX=-1
-startY=-1
-for (( x=0; x<${#line}; x++ )); do
-	char="${line:$x:1}"
+# iterate lines and chars
+# add everything up?
+for (( y=0; y < lineNum; y++ )); do
+	line="${lines[$y]}"
 
-	if [[ $char == 'S' ]]; then
-		startX=$x
-		startY=0
-		break;
-	fi
+	for (( x=0; x < ${#line}; x++ )); do
+		char=$(getChar $x $y)
+
+		case $char in
+			'.') ;;
+
+			'S') value=1
+				 addValue $((x)) $((y+1)) $value;;
+
+			'|') value=$(getValue $((x)) $((y-1)))
+				 addValue $((x)) $((y+1)) $value;;
+
+			'^') value=$(getValue $((x)) $((y-1)))
+				 addValue $((x-1)) $((y+1)) $value
+				 addValue $((x+1)) $((y+1)) $value;;
+		esac
+	done
 done
 
 
-# lets go
-echo "Starting position is $startX,$startY"
-maxX=0
-maxY=0
-followLine2 $startX $startY
-echo
-
-# Keep track of the number of beams entering a splitter. 
-# When they split, multiply by 2 
-# and add that to the number of beams in each adjacent cell 
-# and set the beams and the current cell to 0.
-
-
-
+# outputs
 shopt -s extglob;
-rm -f output-calcs.txt
 for (( y=0; y < lineNum; y++ )); do
 	line="${lines[$y]}"
 	lineSum=0
@@ -260,14 +275,12 @@ for (( y=0; y < lineNum; y++ )); do
 		esac
 	done
 
-	echo "$outline = $lineSum" | tee -a output-calcs.txt
+	echo "$outline = $lineSum" | tee -a ${output_file}
 done
 
-
-# sleep 10
-
-# echo "done"
-# wc -l $output_file
+echo
+echo -ne "Result is: "
+tail -n1 output-calcs.txt | awk -F'=' '{print $2}'
 
 exit;
 
