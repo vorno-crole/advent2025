@@ -66,7 +66,8 @@
 		case $char in
 			'|')
 				# follow the line
-				followLine $x $((y+1)) $prev;;
+				followLine $x $((y+1)) $prev
+				return;;
 			
 			'^')
 				# follow two lines!
@@ -77,19 +78,74 @@
 					followLine $((x-1)) $((y+1)) "${prev}L"
 					followLine $((x+1)) $((y+1)) "${prev}R"
 				fi
-				;;
+				return;;
 
 			'.')
 				# error
 				echo "Error: $x $y $prev"
-				exit 1
-				;;
+				exit 1;;
 
 			'')
 				# no more lines!
-				echo "$prev" | tee -a $output_file ;;
+				echo "$prev" | tee -a $output_file;;
 		esac
 	}
+
+	followLine2()
+	{
+		local x="$1"
+		local y="$2"
+		# local value="$3"
+
+		# echo "followLine2 $x $y $counter"
+
+		char=$(getChar $x $y)
+		# echo "$char"
+
+		local showme=0
+		if (( maxX < x )); then
+			maxX=$x
+			showme=1
+		fi
+		if (( maxY < y )); then
+			maxY=$y
+			showme=1
+		fi
+		if (( showme == 1 )); then
+			echo -ne "\rProcessing $maxX,$maxY..."
+		fi
+
+		case $char in
+			'S')
+				# follow the line
+				followLine2 $x $((y+1))
+				return;;
+
+			'|')
+				# capture a +1 on this x,y
+				# then follow the line
+				addCounter $x $y 1
+				followLine2 $x $((y+1))
+				return;;
+			
+			'^')
+				# follow two lines
+				followLine2 $((x-1)) $((y+1))
+				followLine2 $((x+1)) $((y+1))
+				return;;
+
+			'.')
+				# error
+				echo "Error: $x $y"
+				exit 1;;
+
+			'')
+				# no more lines!
+				# echo "$prev" | tee -a $output_file
+				return;;
+		esac
+	}
+
 
 	getChar()
 	{
@@ -101,9 +157,24 @@
 		char="${line:$x:1}"
 		echo $char
 	}
+
+	addCounter()
+	{
+		local x="$1"
+		local y="$2"
+		local num="$3"
+		local key="$x,$y"
+
+		if [[ ${counter[$key]} == "" ]]; then
+			counter[$key]=0
+		fi
+
+		local value=${counter[$key]}
+		((value+=num))
+
+		counter[$key]=$value
+	}
 # functions
-
-
 
 # prep
 output_file='output-paths.txt'
@@ -116,6 +187,7 @@ input_file="output.txt"
 
 # load lines into array
 declare -A lines
+declare -A counter
 lineNum=0
 while IFS= read -u 11 -r line; do
 	lines[$lineNum]="$line"
@@ -141,10 +213,29 @@ done
 
 # lets go
 echo "Starting position is $startX,$startY"
-pids=()
-maxPids=4
-prev=""
-followLine $startX $((startY+1)) $prev
+maxX=0
+maxY=0
+followLine2 $startX $((startY+1))
+
+for (( y=0; y<= lineNum; y++ )); do
+	line="${lines[$y]}"
+	lineSum=0
+	for (( x=0; x<${#line}; x++ )); do
+
+		char="${counter["$x,$y"]}"
+
+		if [[ $char == "" ]]; then
+			char="."
+		else
+			((lineSum+=char))
+		fi
+
+		echo -ne $char
+	done
+
+	echo "=$lineSum"
+done
+
 
 # sleep 10
 
