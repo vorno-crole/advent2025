@@ -73,7 +73,7 @@ while IFS= read -u 11 -r line; do
 
 			'.') 
 				# check if a beam should be here
-				# echo "$beams[$i]";
+				# echo "${beams[$i]}";
 
 				if [[ ${beams[$i]} == "Y" ]]; then
 					outLine+="|"
@@ -95,8 +95,8 @@ while IFS= read -u 11 -r line; do
 
 	# echo "$outLine" | tee -a $output_file
 	echo "$outLine" >> $output_file
-	beams=()
 
+	beams=()
 	for key in "${!nextBeams[@]}"; do
 		beams["$key"]="${nextBeams[$key]}"
 	done
@@ -106,6 +106,9 @@ done 11< ${input_file}
 
 cat $output_file
 echo "Splits: $splits"
+
+
+
 
 # --- Part Two ---
 
