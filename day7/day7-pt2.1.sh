@@ -50,105 +50,6 @@
 
 
 # functions
-	followLine()
-	{
-		local x="$1"
-		local y="$2"
-		local prev="$3"
-
-		prevLen=${#prev}
-
-		# echo "followLine $x $y $prev"
-
-		char=$(getChar $x $y)
-		# echo "$char"
-
-		case $char in
-			'|')
-				# follow the line
-				followLine $x $((y+1)) $prev
-				return;;
-			
-			'^')
-				# follow two lines!
-				if (( prevLen <= maxPids )); then
-					followLine $((x-1)) $((y+1)) "${prev}L" &
-					followLine $((x+1)) $((y+1)) "${prev}R" &
-				else
-					followLine $((x-1)) $((y+1)) "${prev}L"
-					followLine $((x+1)) $((y+1)) "${prev}R"
-				fi
-				return;;
-
-			'.')
-				# error
-				echo "Error: $x $y $prev"
-				exit 1;;
-
-			'')
-				# no more lines!
-				echo "$prev" | tee -a $output_file;;
-		esac
-	}
-
-	followLine2()
-	{
-		local x="$1"
-		local y="$2"
-		# local value="$3"
-
-		# echo "followLine2 $x $y $counter"
-
-		char=$(getChar $x $y)
-		# echo "$char"
-
-		# local showme=0
-		# if (( maxX < x )); then
-		# 	maxX=$x
-		# 	showme=1
-		# fi
-		# if (( maxY < y )); then
-		# 	maxY=$y
-		# 	showme=1
-		# fi
-		# if (( showme == 1 )); then
-		echo -ne "\rProcessing $x,$y..."
-		# fi
-
-		case $char in
-			'S')
-				# follow the line
-				putCharCounter $x $y $char
-				followLine2 $x $((y+1))
-				return;;
-
-			'|')
-				# capture a +1 on this x,y
-				# then follow the line
-				addCounter $x $y 1
-				followLine2 $x $((y+1))
-				return;;
-			
-			'^')
-				# follow two lines
-				putCharCounter $x $y $char
-				followLine2 $((x-1)) $((y+1)) # L
-				followLine2 $((x+1)) $((y+1)) # R
-				return;;
-
-			'.')
-				# error
-				echo "Error: $x $y"
-				exit 1;;
-
-			'')
-				# no more lines!
-				# echo "$prev" | tee -a $output_file
-				return;;
-		esac
-	}
-
-
 	getChar()
 	{
 		local x="$1"
@@ -158,11 +59,6 @@
 		line="${lines[$y]}"
 		char="${line:$x:1}"
 		echo $char
-	}
-
-	addValue()
-	{
-		addCounter $1 $2 $3
 	}
 
 	getValue()
@@ -179,7 +75,7 @@
 		echo "$value"
 	}
 
-	addCounter()
+	addValue()
 	{
 		local x="$1"
 		local y="$2"
@@ -195,22 +91,12 @@
 
 		counter[$key]=$value
 	}
-
-	putCharCounter()
-	{
-		local x="$1"
-		local y="$2"
-		local value="$3"
-		local key="$x,$y"
-
-		counter[$key]=$value
-	}
-
 # functions
 
 # prep
 output_file='output-calcs.txt'
 rm -f $output_file
+
 
 # create the solution
 ./day7-pt1.sh ${input_file} > /dev/null
@@ -225,8 +111,8 @@ while IFS= read -u 11 -r line; do
 	lines[$lineNum]="$line"
 	((lineNum++))
 done 11< ${input_file}
-
 # echo "${lines[@]}"
+
 
 # iterate lines and chars
 # add everything up?
@@ -365,7 +251,7 @@ exit;
 # In this example, in total, the particle ends up on 40 different timelines.
 
 # Apply the many-worlds interpretation of quantum tachyon splitting to your manifold diagram. 
-In total, how many different timelines would a single tachyon particle end up on?
+# In total, how many different timelines would a single tachyon particle end up on?
 
 
 # --- Part One ---
