@@ -49,67 +49,111 @@
 # setup
 
 
+# functions
+	followLine()
+	{
+		local x="$1"
+		local y="$2"
+		local prev="$3"
+
+		prevLen=${#prev}
+
+		# echo "followLine $x $y $prev"
+
+		char=$(getChar $x $y)
+		# echo "$char"
+
+		case $char in
+			'|')
+				# follow the line
+				followLine $x $((y+1)) $prev;;
+			
+			'^')
+				# follow two lines!
+				if (( prevLen <= maxPids )); then
+					followLine $((x-1)) $((y+1)) "${prev}L" &
+					followLine $((x+1)) $((y+1)) "${prev}R" &
+				else
+					followLine $((x-1)) $((y+1)) "${prev}L"
+					followLine $((x+1)) $((y+1)) "${prev}R"
+				fi
+				;;
+
+			'.')
+				# error
+				echo "Error: $x $y $prev"
+				exit 1
+				;;
+
+			'')
+				# no more lines!
+				echo "$prev" | tee -a $output_file ;;
+		esac
+	}
+
+	getChar()
+	{
+		local x="$1"
+		local y="$2"
+		local line char
+
+		line="${lines[$y]}"
+		char="${line:$x:1}"
+		echo $char
+	}
+# functions
+
+
+
 # prep
 output_file='output-paths.txt'
 rm -f $output_file
 
-tac output.txt | tr '^' 'Y' > $output_file
+# create the solution
+./day7-pt1.sh ${input_file} > /dev/null
+input_file="output.txt"
+
+
+# load lines into array
+declare -A lines
+lineNum=0
+while IFS= read -u 11 -r line; do
+	lines[$lineNum]="$line"
+	((lineNum++))
+done 11< ${input_file}
+
+# echo "${lines[@]}"
+
+# Find the start pos
+line="${lines[0]}"
+startX=-1
+startY=-1
+for (( x=0; x<${#line}; x++ )); do
+	char="${line:$x:1}"
+
+	if [[ $char == 'S' ]]; then
+		startX=$x
+		startY=0
+		break;
+	fi
+done
+
+
+# lets go
+echo "Starting position is $startX,$startY"
+pids=()
+maxPids=4
+prev=""
+followLine $startX $((startY+1)) $prev
+
+# sleep 10
+
+# echo "done"
+# wc -l $output_file
 
 exit;
 
 
-# start here
-lineNum=0
-declare -A beams
-declare -A nextBeams
-splits=0
-while IFS= read -u 11 -r line; do
-	outLine="";
-	
-	for (( i=0; i<${#line}; i++ )); do
-		char="${line:$i:1}"  # Extract one character at index 'i'
-
-		case $char in
-			'S') 
-				# new beam starts here.
-				nextBeams[$i]=Y
-				outLine+="S";;
-
-			'.') 
-				# check if a beam should be here
-				# echo "${beams[$i]}";
-
-				if [[ ${beams[$i]} == "Y" ]]; then
-					outLine+="|"
-				else
-					outLine+="."
-				fi;;
-
-			'^') 
-				# split a beam from above (if there's a beam?)
-				if [[ ${beams[$i]} == "Y" ]]; then
-					nextBeams[$((i))]="N"
-					nextBeams[$((i+1))]="Y"
-					nextBeams[$((i-1))]="Y"
-					((splits++))
-				fi
-				outLine+="^";;
-		esac
-	done
-
-	# echo "$outLine" | tee -a $output_file
-	echo "$outLine" >> $output_file
-
-	beams=()
-	for key in "${!nextBeams[@]}"; do
-		beams["$key"]="${nextBeams[$key]}"
-	done
-
-	((lineNum++))
-done 11< ${input_file}
-
-cat $output_file
-echo "Splits: $splits"
 
 
 
