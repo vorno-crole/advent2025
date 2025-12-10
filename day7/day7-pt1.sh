@@ -55,8 +55,57 @@ rm -f $output_file
 
 
 # start here
+lineNum=0
+declare -A beams
+declare -A nextBeams
+splits=0
+while IFS= read -u 11 -r line; do
+	outLine="";
+	
+	for (( i=0; i<${#line}; i++ )); do
+		char="${line:$i:1}"  # Extract one character at index 'i'
 
+		case $char in
+			'S') 
+				# new beam starts here.
+				nextBeams[$i]=Y
+				outLine+="S";;
 
+			'.') 
+				# check if a beam should be here
+				# echo "$beams[$i]";
+
+				if [[ ${beams[$i]} == "Y" ]]; then
+					outLine+="|"
+				else
+					outLine+="."
+				fi;;
+
+			'^') 
+				# split a beam from above (if there's a beam?)
+				if [[ ${beams[$i]} == "Y" ]]; then
+					nextBeams[$((i))]="N"
+					nextBeams[$((i+1))]="Y"
+					nextBeams[$((i-1))]="Y"
+					((splits++))
+				fi
+				outLine+="^";;
+		esac
+	done
+
+	# echo "$outLine" | tee -a $output_file
+	echo "$outLine" >> $output_file
+	beams=()
+
+	for key in "${!nextBeams[@]}"; do
+		beams["$key"]="${nextBeams[$key]}"
+	done
+
+	((lineNum++))
+done 11< ${input_file}
+
+cat $output_file
+echo "Splits: $splits"
 
 # --- Part Two ---
 
@@ -195,5 +244,3 @@ rm -f $output_file
 # In this example, a tachyon beam is split a total of 21 times.
 
 # Analyze your manifold diagram. How many times will the beam be split?
-
-
