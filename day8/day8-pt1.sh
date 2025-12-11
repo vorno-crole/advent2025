@@ -50,53 +50,73 @@
 
 
 # functions
-	# getChar()
-	# {
-	# 	local x="$1"
-	# 	local y="$2"
-	# 	local line char
+	distance_3d()
+	{
+		local src=$1
+		local dest=$2
 
-	# 	line="${lines[$y]}"
-	# 	char="${line:$x:1}"
-	# 	echo $char
-	# }
+		local x1 y1 z1
+		local x2 y2 z2
+		local distance
 
-	# getValue()
-	# {
-	# 	local x="$1"
-	# 	local y="$2"
-	# 	local key="$x,$y"
-	# 	local value=0
+		IFS="," read -r x1 y1 z1 <<< "$src"
+		IFS="," read -r x2 y2 z2 <<< "$dest"
 
-	# 	if [[ ${counter[$key]} != "" ]]; then
-	# 		value="${counter[$key]}"
-	# 	fi
-
-	# 	echo "$value"
-	# }
-
-	# addValue()
-	# {
-	# 	local x="$1"
-	# 	local y="$2"
-	# 	local num="$3"
-	# 	local key="$x,$y"
-
-	# 	if [[ ${counter[$key]} == "" ]]; then
-	# 		counter[$key]=0
-	# 	fi
-
-	# 	local value=${counter[$key]}
-	# 	((value+=num))
-
-	# 	counter[$key]=$value
-	# }
+		# Use bc for floating-point arithmetic and square root (s)
+		# The 'l' option to bc loads the math library
+		distance=$(bc -l <<< "sqrt(($x2 - $x1)^2 + ($y2 - $y1)^2 + ($z2 - $z1)^2)")
+		echo "$distance"
+	}
 # functions
 
 # prep
 output_file='output.txt'
 # rm -f $output_file
 
+declare -A jboxes
+lineNum=0
+while IFS=, read -u 11 -r x y z; do
+	# echo "$lineNum: $x, $y, $z"
+	jboxes[$lineNum]="$x,$y,$z"
+
+	((lineNum++))
+done 11< ${input_file}
+
+source=""
+closest=""
+minDist="99999999999999999"
+for ((i=0; i< $lineNum; i++ )); do
+
+	# take first value
+	if (( i==0 )); then
+		source="${jboxes[$i]}"
+		continue;
+	fi
+
+	# compare to all other values
+	# which is closest?
+
+	destination="${jboxes[$i]}"
+	distance="$(distance_3d $source $destination)"
+
+	echo -ne "$source -> $destination : $distance"
+
+	# if (( minDist > distance )); then
+	if (( $(echo "$minDist > $distance" | bc -l) )); then
+		minDist=$distance
+		closest="$destination"
+		echo -ne " * closest"
+	fi
+
+	echo
+done
+
+echo
+echo "Closest box to $source is $closest : $minDist"
+
+
+# echo "${jboxes[@]}"
+exit;
 
 echo
 echo -ne "Result is: "
