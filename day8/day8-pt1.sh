@@ -55,12 +55,12 @@
 		local src=$1
 		local dest=$2
 
-		local x1 y1 z1
-		local x2 y2 z2
+		local x1 y1 z1 c1
+		local x2 y2 z2 c2
 		local distance
 
-		IFS="," read -r x1 y1 z1 <<< "$src"
-		IFS="," read -r x2 y2 z2 <<< "$dest"
+		IFS="," read -r x1 y1 z1 c1 <<< "$src"
+		IFS="," read -r x2 y2 z2 c2 <<< "$dest"
 
 		# Use bc for floating-point arithmetic and square root (s)
 		# The 'l' option to bc loads the math library
@@ -74,48 +74,122 @@ output_file='output.txt'
 # rm -f $output_file
 
 declare -A jboxes
+
 lineNum=0
 while IFS=, read -u 11 -r x y z; do
 	# echo "$lineNum: $x, $y, $z"
-	jboxes[$lineNum]="$x,$y,$z"
+	jboxes[$lineNum]="$x,$y,$z,0" # 0 = circuit 0
 
 	((lineNum++))
 done 11< ${input_file}
 
-source=""
-closest=""
-minDist="99999999999999999"
-for ((i=0; i< $lineNum; i++ )); do
+maxCircuit=0
 
-	# take first value
-	if (( i==0 )); then
-		source="${jboxes[$i]}"
+
+for (( i=0; i< $lineNum; i++ )); do
+	echo $i
+
+	source=""
+	sourceIdx=""
+	closest=""
+	closestIdx=""
+	minDist="99999999999999999"
+
+	jbox="${jboxes[$i]}"
+
+	# get details on this jbox
+	IFS="," read -r x y z c <<< "$jbox"
+	# echo "source is: $x $y $z $c"
+
+	# take first jbox that has no circuit
+	if [[ $c == 0 && $source == "" ]]; then
+		echo "source is: $x $y $z"
+		source="$jbox"
+		sourceIdx="$i"
+	fi
+
+	if [[ $source == "" ]]; then
 		continue;
 	fi
 
-	# compare to all other values
-	# which is closest?
+	# exit;
 
-	destination="${jboxes[$i]}"
-	distance="$(distance_3d $source $destination)"
+	# loop the jboxes, find closest.
+	for (( j=0; j< $lineNum; j++ )); do
+		# echo "$i $j"
+		if (( j == sourceIdx )); then
+			# skip the same one
+			continue;
+		fi
+		# exit;
 
-	echo -ne "$source -> $destination : $distance"
+		# compare to all other values
+		# which is closest?
 
-	# if (( minDist > distance )); then
-	if (( $(echo "$minDist > $distance" | bc -l) )); then
-		minDist=$distance
-		closest="$destination"
-		echo -ne " * closest"
+		destination="${jboxes[$j]}"
+		distance="$(distance_3d $source $destination)"
+
+		echo -ne "$source -> $destination : $distance"
+
+		# if (( minDist > distance )); then
+		if (( $(echo "$minDist > $distance" | bc -l) )); then
+			minDist=$distance
+			closest="$destination"
+			closestIdx="$j"
+			echo -ne " * closest"
+		fi
+
+		echo
+	done
+
+	echo "Closest box to $source is $closest : $minDist"
+
+	# todo update circuit
+	IFS="," read -r x2 y2 z2 c2 <<< "$closest"
+	
+	if (( c2 == 0 )); then
+		((maxCircuit++))
+		circ=$maxCircuit
+	else
+		circ=$c2
 	fi
 
-	echo
+	echo "Assigning to circuit $circ"
+
+	# source
+	# dest
+	echo $sourceIdx, $closestIdx
+
+	jboxes[$sourceIdx]="$x,$y,$z,$circ"
+	jboxes[$closestIdx]="$x2,$y2,$z2,$circ"
+
+	echo "${jboxes[$sourceIdx]}"
+	echo "${jboxes[$closestIdx]}"
+	# exit;
 done
 
 echo
-echo "Closest box to $source is $closest : $minDist"
+# echo "${jboxes[@]}"	
 
 
-# echo "${jboxes[@]}"
+declare -A circuits
+for (( i=0; i< $lineNum; i++ )); do
+	jbox="${jboxes[$i]}"
+	# get details on this jbox
+	IFS="," read -r x y z c <<< "$jbox"
+
+	circs="C$c: "
+	if [[ ${circuits[$c]} != "" ]]; then
+		circs="${circuits[$c]}"
+	fi
+
+	circ+="-$x,$y,$z"
+	circuits[$c]="$circ"
+done
+
+
+echo "${circuits[@]}"
+
 exit;
 
 echo
