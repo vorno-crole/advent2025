@@ -74,17 +74,18 @@ output_file='output.txt'
 # rm -f $output_file
 
 declare -A jboxes
+declare -A distances
 
 lineNum=0
 while IFS=, read -u 11 -r x y z; do
-	# echo "$lineNum: $x, $y, $z"
-	jboxes[$lineNum]="$x,$y,$z,0" # 0 = circuit 0
-
+	echo "$lineNum: $x, $y, $z"
+	jboxes[$lineNum]="$x,$y,$z"
 	((lineNum++))
 done 11< ${input_file}
 
 maxCircuit=0
 
+echo "Reviewing all JBoxes, determine distance between each..."
 
 for (( i=0; i< $lineNum; i++ )); do
 	echo $i
@@ -96,79 +97,120 @@ for (( i=0; i< $lineNum; i++ )); do
 	minDist="99999999999999999"
 
 	jbox="${jboxes[$i]}"
+	source="$jbox"
+	sourceIdx="$i"
 
 	# get details on this jbox
-	IFS="," read -r x y z c <<< "$jbox"
-	# echo "source is: $x $y $z $c"
+	# IFS="," read -r x y z <<< "$jbox"
+	# echo "source is: $x $y $z"
 
-	# take first jbox that has no circuit
-	if [[ $c == 0 && $source == "" ]]; then
-		echo "source is: $x $y $z"
-		source="$jbox"
-		sourceIdx="$i"
-	fi
+	# # take first jbox that has no circuit
+	# if [[ $c == 0 && $source == "" ]]; then
+	# 	echo "source JBox is: $x $y $z"
+	# 	source="$jbox"
+	# 	sourceIdx="$i"
+	# fi
 
-	if [[ $source == "" ]]; then
-		continue;
-	fi
+	# if [[ $source == "" ]]; then
+	# 	continue;
+	# fi
 
 	# exit;
 
 	# loop the jboxes, find closest.
 	for (( j=0; j< $lineNum; j++ )); do
-		# echo "$i $j"
+
 		if (( j == sourceIdx )); then
 			# skip the same one
 			continue;
 		fi
-		# exit;
+
+		destination="${jboxes[$j]}"
+
+		if (( i < j )); then 
+			# echo i is less
+			key="$i,$j"
+		else
+			# echo j is less
+			key="$j,$i"
+		fi
+
+		if [[ ${distances[$key]} == "" ]]; then
+			# echo calcing
+			distance="$(distance_3d $source $destination)"
+			distances[$key]=$distance;
+		else
+			distance="${distances[$key]}"
+		fi
 
 		# compare to all other values
 		# which is closest?
 
-		destination="${jboxes[$j]}"
-		distance="$(distance_3d $source $destination)"
 
 		echo -ne "$source -> $destination : $distance"
 
 		# if (( minDist > distance )); then
-		if (( $(echo "$minDist > $distance" | bc -l) )); then
-			minDist=$distance
-			closest="$destination"
-			closestIdx="$j"
-			echo -ne " * closest"
-		fi
+		# if (( $(echo "$minDist > $distance" | bc -l) )); then
+		# 	minDist=$distance
+		# 	closest="$destination"
+		# 	closestIdx="$j"
+		# 	# echo -ne " * closest"
+		# fi
 
-		echo
+		echo -ne "."
 	done
+	# echo
 
-	echo "Closest box to $source is $closest : $minDist"
+	# echo "Closest box to $source is $closest : $minDist"
 
-	# todo update circuit
-	IFS="," read -r x2 y2 z2 c2 <<< "$closest"
+	# # todo update circuit
+	# IFS="," read -r x2 y2 z2 c2 <<< "$closest"
 	
-	if (( c2 == 0 )); then
-		((maxCircuit++))
-		circ=$maxCircuit
-	else
-		circ=$c2
-	fi
+	# if (( c2 == 0 )); then
+	# 	((maxCircuit++))
+	# 	circ=$maxCircuit
+	# else
+	# 	circ=$c2
+	# fi
 
-	echo "Assigning to circuit $circ"
+	# echo "Assigning to circuit $circ"
 
-	# source
-	# dest
-	echo $sourceIdx, $closestIdx
+	# # source
+	# # dest
+	# # echo $sourceIdx, $closestIdx
 
-	jboxes[$sourceIdx]="$x,$y,$z,$circ"
-	jboxes[$closestIdx]="$x2,$y2,$z2,$circ"
+	# jboxes[$sourceIdx]="$x,$y,$z,$circ"
+	# jboxes[$closestIdx]="$x2,$y2,$z2,$circ"
 
-	echo "${jboxes[$sourceIdx]}"
-	echo "${jboxes[$closestIdx]}"
+	# echo "${jboxes[$sourceIdx]}"
+	# echo "${jboxes[$closestIdx]}"
 	# exit;
+	echo
 done
 
-echo
+
+# sort distances....
+rm -f distances.txt
+for key in "${!distances[@]}"; do
+    # echo "Key: $key, Value: ${distances[$key]}"
+	value="${distances[$key]}"
+
+	IFS="," read -r j1 j2 <<< "$key"
+	jbox1="${jboxes[$j1]}"
+	jbox2="${jboxes[$j2]}"
+
+	echo "$value = $jbox1 - $jbox2" >> distances.txt
+done
+
+sort -n -o distances.txt distances.txt
+
+cat distances.txt
+exit;
+
+
+
+
+# echo
 # echo "${jboxes[@]}"	
 
 
@@ -177,18 +219,33 @@ for (( i=0; i< $lineNum; i++ )); do
 	jbox="${jboxes[$i]}"
 	# get details on this jbox
 	IFS="," read -r x y z c <<< "$jbox"
+	# echo "$x $y $z $c"
 
-	circs="C$c: "
+	circs=""
 	if [[ ${circuits[$c]} != "" ]]; then
 		circs="${circuits[$c]}"
 	fi
+	# echo "$circs"
 
-	circ+="-$x,$y,$z"
-	circuits[$c]="$circ"
+	circs+=" $x,$y,$z"
+	# echo "$circs"
+	circuits[$c]="$circs"
 done
 
 
-echo "${circuits[@]}"
+# echo "${circuits[@]}"
+
+for (( c=1; c <= ${#circuits[@]}; c++ )); do
+	circ="${circuits[$c]}"
+	echo "Circ $c: "
+	echo "$circ"
+
+	circvalues=()
+	IFS=' ' read -ra circvalues <<< "$circ"
+	echo -e "${#circvalues[@]} circuits\n"
+done
+
+
 
 exit;
 
