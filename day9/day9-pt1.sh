@@ -48,15 +48,99 @@
 	# end functions
 # setup
 
-
 # functions
+	calcArea()
+	{
+		local c1=$1
+		local c2=$2
+
+		local x1 y1
+		local x2 y2
+		local area
+		local Xrange Yrange
+
+		IFS="," read -r x1 y1 <<< "$c1"
+		IFS="," read -r x2 y2 <<< "$c2"
+
+		Xrange=$(( x1 - x2 ))
+		Yrange=$(( y1 - y2 ))
+
+		if (( Xrange < 0 )); then
+			(( Xrange *= -1 ))
+		fi
+		if (( Yrange < 0 )); then
+			(( Yrange *= -1 ))
+		fi
+		((Xrange++))
+		((Yrange++))
+		area=$(( Xrange * Yrange ))
+
+		# echo "$c1 $c2 : $Xrange $Yrange : $area"
+		echo "$area"
+
+		# # Use bc for floating-point arithmetic and square root (s)
+		# # The 'l' option to bc loads the math library
+		# distance=$(bc -l <<< "sqrt(($x2 - $x1)^2 + ($y2 - $y1)^2 + ($z2 - $z1)^2)")
+		# echo "$distance"
+	}
 # functions
 
 # prep
 output_file='output.txt'
 # rm -f $output_file
-exit;
 
+
+# load data into array
+coords=()
+echo "load data into array"
+mapfile -t coords < $input_file
+
+# echo "${coords[@]}"
+
+
+echo "figure out matrix"
+declare -A multiples
+i=0
+while (( i < ${#coords[@]} )); do
+	echo -ne $i
+	j=0
+	while (( j < ${#coords[@]} )); do
+		if (( i == j )); then
+			((j++))
+			continue
+		fi
+
+		key="$i,$j"
+		if (( j < i )); then
+			key="$j,$i"
+		fi
+
+		if [[ ${multiples[$key]} != "" ]]; then
+			((j++))
+			continue
+		fi
+
+		area=$(calcArea ${coords[$i]} ${coords[$((j))]})
+		multiples[$key]=$area
+
+		echo -ne .
+		((j++))
+	done
+
+	# echo -ne '|'
+	echo
+	((i++))
+done
+echo
+
+# echo "${multiples[@]}"
+sortedMultiples=()
+
+mapfile -t sortedMultiples < <(printf '%s\n' "${multiples[@]}" | sort -rn)
+# echo "${sortedMultiples[@]}"
+
+echo -e "\n"
+echo "Largest multiple is ${sortedMultiples[0]}"
 
 
 # --- Part Two ---
