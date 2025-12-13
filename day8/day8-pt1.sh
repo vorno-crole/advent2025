@@ -78,7 +78,7 @@ declare -A distances
 
 lineNum=0
 while IFS=, read -u 11 -r x y z; do
-	echo "$lineNum: $x, $y, $z"
+	# echo "$lineNum: $x, $y, $z"
 	jboxes[$lineNum]="$x,$y,$z"
 	((lineNum++))
 done 11< ${input_file}
@@ -88,7 +88,7 @@ maxCircuit=0
 echo "Reviewing all JBoxes, determine distance between each..."
 
 for (( i=0; i< $lineNum; i++ )); do
-	echo $i
+	echo -ne "Processing $i: "
 
 	source=""
 	sourceIdx=""
@@ -99,23 +99,6 @@ for (( i=0; i< $lineNum; i++ )); do
 	jbox="${jboxes[$i]}"
 	source="$jbox"
 	sourceIdx="$i"
-
-	# get details on this jbox
-	# IFS="," read -r x y z <<< "$jbox"
-	# echo "source is: $x $y $z"
-
-	# # take first jbox that has no circuit
-	# if [[ $c == 0 && $source == "" ]]; then
-	# 	echo "source JBox is: $x $y $z"
-	# 	source="$jbox"
-	# 	sourceIdx="$i"
-	# fi
-
-	# if [[ $source == "" ]]; then
-	# 	continue;
-	# fi
-
-	# exit;
 
 	# loop the jboxes, find closest.
 	for (( j=0; j< $lineNum; j++ )); do
@@ -147,7 +130,7 @@ for (( i=0; i< $lineNum; i++ )); do
 		# which is closest?
 
 
-		echo -ne "$source -> $destination : $distance"
+		# echo -ne "$source -> $destination : $distance"
 
 		# if (( minDist > distance )); then
 		# if (( $(echo "$minDist > $distance" | bc -l) )); then
@@ -187,24 +170,37 @@ for (( i=0; i< $lineNum; i++ )); do
 	# exit;
 	echo
 done
+echo
 
 
 # sort distances....
 rm -f distances.txt
 for key in "${!distances[@]}"; do
-    # echo "Key: $key, Value: ${distances[$key]}"
+	# echo "Key: $key, Value: ${distances[$key]}"
 	value="${distances[$key]}"
 
 	IFS="," read -r j1 j2 <<< "$key"
 	jbox1="${jboxes[$j1]}"
 	jbox2="${jboxes[$j2]}"
 
-	echo "$value = $jbox1 - $jbox2" >> distances.txt
+	echo "$value|$j1|$jbox1|$j2|$jbox2" >> distances.txt
 done
 
 sort -n -o distances.txt distances.txt
+# cat distances.txt
 
-cat distances.txt
+# load distances into array?
+
+while IFS="|" read -u 11 -r dist j1 jbox1 j2 jbox2; do
+	# 316.90219311326957113731|0|162,817,812|19|425,690,689
+
+	
+
+	# echo "$lineNum: $x, $y, $z"
+	jboxes[$lineNum]="$x,$y,$z"
+
+done 11< ${input_file}
+
 exit;
 
 
